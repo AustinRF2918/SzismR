@@ -48,9 +48,6 @@ impl CommandNode{
         {
              println!("{:?}", i)
         }
-
-        //String is for traceback of functions
-
     }
 }
 
@@ -66,7 +63,6 @@ fn main()
     //Place them into a command driver which analyizes them and
     //passes them off to other portions.
     command_driver(&mut args);
-
 }
 
 fn command_driver(x : &mut Vec<String>)
@@ -133,5 +129,4 @@ fn execute_script(node : &mut CommandNode, debug : bool)
     {
         &node.debug_display("Execute Script".to_string());
     }
-
 }
