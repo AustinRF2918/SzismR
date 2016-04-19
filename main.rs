@@ -53,9 +53,6 @@ impl CommandNode{
 
 fn main()
 {
-    println!("..............................................");
-    println!(".Szism Toolbox | Copyright 2016 | Austin Fell.");
-    println!("..............................................");
 
     //Collect our command line strings.
     let mut args: Vec<String> = env::args().collect();
@@ -69,6 +66,7 @@ fn command_driver(x : &mut Vec<String>)
 {
     //Probably should turn these into enumerative types.
     let mut flag_debug = false;
+    let mut dialogue_debug = false;
 
     //Scan for important flags.
     //These may overwrite our original noun verb structures, which is
@@ -80,6 +78,26 @@ fn command_driver(x : &mut Vec<String>)
         {
             flag_debug = true;
         }
+
+        if x[arg] == "-dialogue"
+        {
+            dialogue_debug = true;
+        }
+    }
+
+    if dialogue_debug == true
+    {
+        println!("..............................................");
+        println!(".Szism Toolbox | Copyright 2016 | Austin Fell.");
+        println!("..............................................");
+        println!(".A file manager,                             .");
+        println!(".     A preset manager,                      .");
+        println!(".           Code Generator,                  .");
+        println!(".               DRY Facilitator.             .");
+        println!(".                                            .");
+        println!(".                                            .");
+        println!(".                                            .");
+        println!("..............................................");
     }
 
     //Filling up data entry values for display.
