@@ -6,64 +6,8 @@ use std::process::Command;
 use std::fs::File;
 use std::io::Read;
 
-struct CommandNode
-{
-    id: String,
-    target: String,
-    flags:  Vec<String>
-}
-
-
-//A command node is a callable node that can be used in a stack
-//To automate certain stuff: For now, it is only callable via
-//the run command, but it contains a grouping of flags, id
-//and target.
-
-impl CommandNode{
-    pub fn new(arg : String, arg2 : String) -> CommandNode{
-        CommandNode{
-            id : arg,
-            target : arg2,
-            flags : Vec::new()
-        }
-    }
-
-    pub fn push_flag(&mut self, arg: String){
-        //Push an execution flag to our command node.
-        self.flags.push(arg);
-    }
-
-    pub fn get_command(&mut self) -> &String
-    {
-        return &self.id;
-    }
-
-    pub fn get_target(&mut self) -> &String
-    {
-        return &self.target;
-    }
-
-    pub fn get_flags(&mut self) -> &Vec<String>
-    {
-        return &self.flags;
-    }
-
-    pub fn debug_display(&mut self, arg: String)
-    {
-        println!("");
-        println!("_______DEBUG_______");
-        println!("       CALLER:");
-        println!("          {}", arg);
-        println!("Executing Script: {}", &self.get_command());
-        println!("With Target: {}", &self.get_target());
-        println!("Flag List: ");
-        for i in &self.flags
-        {
-             println!("{:?}", i)
-        }
-        println!(" ");
-    }
-}
+mod command_structure;
+mod rc_parser;
 
 fn main()
 {
@@ -125,7 +69,7 @@ fn command_driver(x : &mut Vec<String>)
 
             //Make a node for our called functions, we can modify this
             //into a callable script and run trees of em later!
-            let mut node = CommandNode::new(command, target);
+            let mut node = command_structure::comm::node::new(command, target);
 
             //Push onto our node a bunch of our flags
             if x.len() > 3
@@ -153,7 +97,7 @@ fn command_driver(x : &mut Vec<String>)
 }
 
 //Get the second argument and use it to determine script attributes.
-fn execute_script(node : &mut CommandNode, debug : bool)
+fn execute_script(node : &mut command_structure::comm::node, debug : bool)
 {
     match env::current_dir() {
         Ok(exe_path) => {
@@ -184,7 +128,7 @@ fn execute_script(node : &mut CommandNode, debug : bool)
             rc_stack.push("swdl.rc".to_string());
 
             //Parse stuff here.
-            parse_rc(&exe_path, debug, rc_stack);
+            rc_parser::parse::hash_parser::parse_rc(&exe_path, debug, rc_stack);
             let script_executable = mutate_path(node, &exe_path, debug, plugin_stack);
 
             call_script(&script_executable, debug);
@@ -199,44 +143,8 @@ fn execute_script(node : &mut CommandNode, debug : bool)
     };
 }
 
-fn parse_rc(root : &PathBuf, debug : bool, rc_tokens : Vec<String>)
-{
-    //We're gonna return a new path without destroying our old root.
-    let mut ret_path = root.clone();
 
-    //Get all our path data.
-    for token in rc_tokens
-    {
-        ret_path.push(token);
-    }
-
-    if debug
-    {
-        println!("  ____PATH DATA______");
-        println!("      Base path name: {:?}", root);
-        println!("      Mutated path name: {:?}", ret_path);
-    }
-
-    let mut rc_data = match File::open(&ret_path){
-        Ok(mut f) => {
-            let mut data = String::new();
-            f.read_to_string(&mut data).unwrap();
-            if debug
-            {
-                println!(" ");
-                println!("      _____PASSED RC_________");
-                println!(" ");
-                println!("{}", data);
-            }
-
-        },
-        Err(e) => {
-             println!("Failed to open RC file: {}", e);
-        }
-    };
-}
-
-fn mutate_path(node : &mut CommandNode, root : &PathBuf, debug : bool, plugin_tokens : Vec<String>) -> PathBuf
+fn mutate_path(node : &mut command_structure::comm::node, root : &PathBuf, debug : bool, plugin_tokens : Vec<String>) -> PathBuf
 {
     //We're gonna return a new path without destroying our old root.
     let mut ret_path = root.clone();
