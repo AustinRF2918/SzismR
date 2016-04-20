@@ -14,6 +14,11 @@ struct CommandNode
 }
 
 
+//A command node is a callable node that can be used in a stack
+//To automate certain stuff: For now, it is only callable via
+//the run command, but it contains a grouping of flags, id
+//and target.
+
 impl CommandNode{
     pub fn new(arg : String, arg2 : String) -> CommandNode{
         CommandNode{
@@ -24,6 +29,7 @@ impl CommandNode{
     }
 
     pub fn push_flag(&mut self, arg: String){
+        //Push an execution flag to our command node.
         self.flags.push(arg);
     }
 
