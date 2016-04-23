@@ -6,6 +6,10 @@ use std::process::Command;
 use std::fs::File;
 use std::io::Read;
 
+extern crate regex;
+
+use regex::Regex;
+
 mod command_structure;
 mod rc_parser;
 
@@ -114,21 +118,40 @@ fn execute_script(node : &mut command_structure::comm::node, debug : bool)
             }
 
             //Make tokenizer for our parseable RC from here.
-            let mut plugin_stack = Vec::new();
-            plugin_stack.push("plugins".to_string());
-            plugin_stack.push("std".to_string());
-            plugin_stack.push("bs-AutoTemplateGenerator".to_string());
-            plugin_stack.push("autoTemplater.py".to_string());
-            //Implement this as tokenizer.
-
+            //Parse stuff here.
+            let mut rc_stack = Vec::new();
 
             //Parse a rc_location to get all our loaded plugins.
-            let mut rc_stack = Vec::new();
             rc_stack.push("configuration".to_string());
             rc_stack.push("swdl.rc".to_string());
 
-            //Parse stuff here.
-            rc_parser::parse::hash_parser::parse_rc(&exe_path, debug, rc_stack);
+            //Create our parser object.
+            let mut hParse = rc_parser::parse::hash_parser::new();
+            let loc = &node.get_target().clone();
+            let command_hash = hParse.parse_rc(&mutate_path(node, &exe_path, debug, rc_stack), debug);
+
+            let mut plugin_stack = Vec::new();
+
+            //Right now only works with standard plugins.
+            //We gotta parse the RC for the parse pack and
+            //append the pack value as well.
+            plugin_stack.push("plugins".to_string());
+            plugin_stack.push("std".to_string());
+
+            match command_hash.get(loc){
+                Some(t) => {
+                    plugin_stack.push(t.to_string());
+                },
+
+                None => {
+                    println!("That script does not exist :(.");
+                    println!("Exiting.");
+                    //Error code 1 : Script not found.
+                    std::process::exit(1);
+                },
+            };
+            //Implement this as tokenizer.
+
             let script_executable = mutate_path(node, &exe_path, debug, plugin_stack);
 
             call_script(&script_executable, debug);
@@ -169,6 +192,8 @@ fn mutate_path(node : &mut command_structure::comm::node, root : &PathBuf, debug
 
 fn call_script(script_executable : &PathBuf, debug : bool)
 {
+    //Only for python right now: add more later.
+    //Preferably port all of the old scripts to Rust.
     //Call our python scripts with python3, should be built into bashrc. put pathname as argument.
     let command_status = Command::new("python3")
                                      .arg(script_executable).status().unwrap_or_else(
