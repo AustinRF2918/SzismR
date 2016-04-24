@@ -5,12 +5,12 @@ use std::os;
 use std::process::Command;
 use std::fs::File;
 use std::io::Read;
+use regex::Regex;
 
 extern crate regex;
 
-use regex::Regex;
-
 mod command_structure;
+mod task_structure;
 mod rc_parser;
 
 fn main()
@@ -95,16 +95,24 @@ fn command_driver(x : &mut Vec<String>)
                 &node.debug_display("Function Driver".to_string());
             }
 
-            execute_script(&mut node, flag_debug);
+            if x[1] == "run"
+            {
+                execute_script(&mut node, flag_debug);
+            }
+
         }
+            if x[1] == "show"
+            {
+                println!("Loaded Scripts: ");
+            }
     }
 }
 
 //Get the second argument and use it to determine script attributes.
 fn execute_script(node : &mut command_structure::comm::node, debug : bool)
 {
-    match env::current_dir() {
-        Ok(exe_path) => {
+    match env::current_exe() {
+        Ok(mut exe_path) => {
             if debug
             {
                 //Our executable path was found. I'm not sure when this
@@ -128,6 +136,8 @@ fn execute_script(node : &mut command_structure::comm::node, debug : bool)
             //Create our parser object.
             let mut hParse = rc_parser::parse::hash_parser::new();
             let loc = &node.get_target().clone();
+            &exe_path.pop();
+
             let command_hash = hParse.parse_rc(&mutate_path(node, &exe_path, debug, rc_stack), debug);
 
             let mut plugin_stack = Vec::new();

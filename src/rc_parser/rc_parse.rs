@@ -124,6 +124,14 @@ pub mod parse{
 
                         let mut FSA: State = State::Begin;
 
+                        //NOTES:
+                        //IIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII
+                        //Preferably we package this into a simplified Finite State Machine
+                        //Library for producting simple states and objects to hold these states
+                        //using idomatic Rust. But for now I am just gonna use this simple
+                        //match/if cases. I Should probably also create more descriptive
+                        //error messages.
+                        //IIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII
                         for i in tokens
                         {
                             match FSA{
