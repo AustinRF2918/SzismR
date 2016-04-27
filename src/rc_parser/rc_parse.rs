@@ -18,51 +18,70 @@ pub mod parse{
     use std::str;
     use std::slice;
 
+    struct lineParseMatrix{
+        mat_map : HashMap<String, Vec<String>>
+    }
+    
+    //TODO - allow lineParseMatrix to be pushed states.
+    //Use an enum instead of a string that contains a regex
+    //and a string. This will probably be way more expandable.
+    
+    
+    struct lineParseMap{
+        //Not sure if these have to be mutable like this..
+        parse_map : HashMap<String, Regex>,
+        parse_state : String,
+        parse_state_regex : Regex,
+        is_conservative : bool
+    }
 
-    fn getAssociatedRegex(state: String) -> String
-    {
-        //Not the most expandable snippit of code, but it's
-        //Better than what I had before.
-        match state 
+    impl lineParseMap{
+        pub fn new(mut self) -> lineParseMap{
+            //By default our parser is "Conservative"
+            //That means that if we come to a state
+            //we don't have an answer for, or parser
+            //crashes. Otherwise it will continue and
+            //simply not change state.
+
+            self.is_conservative = true;
+            self
+        }
+
+        pub fn push_mapping(&mut self, state : String, re : Regex)
         {
-            "ParsePack".to_string() =>
-            {
-                r#"(.*)\.parsePack"#
-            } 
-            "ParseScripts".to_string() =>
-            {
-                r"(.*)\.parseScripts";
-            } 
-            "ParseEntryPoint".to_string() =>
-            {
-                r"(?P<script_caller>.*)\^entryPoint";
-            } 
-            "ParseScriptEntryPoint".to_string() =>
-            {
-                r"(?P<script_entry>.*)";
-            } 
-            "ParseEnd".to_string() =>
-            {
-                r"(.*)End";
-            } 
-            _ =>
-            {
-                r"(.*)";
+            self.parse_map.insert(state, re);
+        }
+
+        pub fn set_liberal(&mut self)
+        {
+            self.is_conservative = false;
+        }
+
+        pub fn switch_state(&mut self, state : String, debug : bool) 
+        {
+            if self.parse_map.contains_key(&state){
+                if debug{
+                        println!("Parser to: {} going from: {}", state, &self.parse_state);
+                }
+                self.parse_state = state;
+            }
+            else{
+                if self.is_conservative
+                {
+                    panic!("Parser set on conservative mode found unparsable input: {} at state : {}", state, &self.parse_state);
+
+                }
+                else
+                {
+                    if debug{
+                        println!("Parser set on liberal mode found unparsable input: {} at state : {}", state, &self.parse_state);
+
+                    }
+
+                }
+
             }
         }
-        
-    }
-        
-
-    enum lineParseState{
-        ParseBegin(Regex),
-        ParsePack(String, Regex),
-        ParseScripts(String, Regex),
-        ParseEntryPoint(Regex),
-        ParseScriptEntryPoint(Regex),
-        ParseScript(String, Regex),
-        ParseDescope(Regex),
-        ParseEnd(Regex),
     }
         
     pub struct hash_parser
