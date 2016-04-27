@@ -18,8 +18,45 @@ pub mod parse{
     use std::str;
     use std::slice;
 
+
+    //This is the "Pluginable" Portion of our code.
+    enum ParseState{
+        ParseBeginDenoter(Regex),
+        ParsePackPath(Regex),
+        ParseScriptsDenoter(Regex),
+        ParseEntryDenoter(Regex),
+        ParseEntryPath(Regex),
+        ParseScriptPath(Regex),
+        ParseDescopeDenoter(Regex),
+        ParseEndDenoter(Regex),
+    }
+    
     struct lineParseMatrix{
-        mat_map : HashMap<String, Vec<String>>
+        //Put enumerative state and it's possbile edges (other states
+        //with regex to say "yes you can do that".
+
+        //                Our Node        Our Edge
+        mat_map : HashMap<ParseState, Vec<ParseState>>,
+        //Scheme:
+        //    1. ParseBegin ------> get vector back
+        //    2. run through vector, does it(erator) pass regex? -----> parse_state = this.
+        //    3. not found?
+        //        4. is it conservative?
+        //            Yes -> Crash Program.
+        //            No  -> Mantain State.
+        //    otherwise...    
+        //    4. Has a signal been sent that we are done?
+        //    5. If yes, check for finish state.
+        //    6. not finish state?
+        //        7. is it conservative?
+        //            Yes -> Crash Program.
+        //            No  -> Force End State.
+        //    otherwise...
+        //    8. go-to 1
+
+        parse_state : ParseState,
+        is_conservative : bool,
+        parse_scope: i32, //We could do this with states, but this is way easier.
     }
     
     //TODO - allow lineParseMatrix to be pushed states.
