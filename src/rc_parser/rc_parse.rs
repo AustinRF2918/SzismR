@@ -18,6 +18,53 @@ pub mod parse{
     use std::str;
     use std::slice;
 
+
+    fn getAssociatedRegex(state: String) -> String
+    {
+        //Not the most expandable snippit of code, but it's
+        //Better than what I had before.
+        match state 
+        {
+            "ParsePack".to_string() =>
+            {
+                r#"(.*)\.parsePack"#
+            } 
+            "ParseScripts".to_string() =>
+            {
+                r"(.*)\.parseScripts";
+            } 
+            "ParseEntryPoint".to_string() =>
+            {
+                r"(?P<script_caller>.*)\^entryPoint";
+            } 
+            "ParseScriptEntryPoint".to_string() =>
+            {
+                r"(?P<script_entry>.*)";
+            } 
+            "ParseEnd".to_string() =>
+            {
+                r"(.*)End";
+            } 
+            _ =>
+            {
+                r"(.*)";
+            }
+        }
+        
+    }
+        
+
+    enum lineParseState{
+        ParseBegin(Regex),
+        ParsePack(String, Regex),
+        ParseScripts(String, Regex),
+        ParseEntryPoint(Regex),
+        ParseScriptEntryPoint(Regex),
+        ParseScript(String, Regex),
+        ParseDescope(Regex),
+        ParseEnd(Regex),
+    }
+        
     pub struct hash_parser
     {
         tokens:  Vec<String>,
@@ -32,6 +79,8 @@ pub mod parse{
 
         pub fn parse_rc(&self, root : &PathBuf, debug : bool) -> HashMap<String, String>
         {
+
+
             //We're gonna return a new path without destroying our old root.
             let mut ret_path = root.clone();
             let mut slice = &mut String::new();
@@ -48,9 +97,7 @@ pub mod parse{
 
                         let p_pack = regex::Regex::new(r"(.*)\.parsePack").unwrap();
                         let p_ms_entry = regex::Regex::new(r"(.*)\.parseScripts").unwrap();
-
                         let p_s_entry = regex::Regex::new(r"(?P<script_caller>.*)\^entryPoint").unwrap();
-
                         let p_descope = regex::Regex::new(r"(.*)End").unwrap();
                         let s_entry = regex::Regex::new(r"(?P<script_entry>.*)").unwrap();
                         let s_dependancy = regex::Regex::new(r"(.*)").unwrap();

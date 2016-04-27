@@ -1,11 +1,6 @@
 use std::env;
-use std::path::Path;
 use std::path::PathBuf;
-use std::os;
 use std::process::Command;
-use std::fs::File;
-use std::io::Read;
-use regex::Regex;
 
 extern crate regex;
 
@@ -15,7 +10,6 @@ mod rc_parser;
 
 fn main()
 {
-
     //Collect our command line strings.
     let mut args: Vec<String> = env::args().collect();
 
@@ -134,7 +128,7 @@ fn execute_script(node : &mut command_structure::comm::node, debug : bool)
             rc_stack.push("swdl.rc".to_string());
 
             //Create our parser object.
-            let mut hParse = rc_parser::parse::hash_parser::new();
+            let hParse = rc_parser::parse::hash_parser::new();
             let loc = &node.get_target().clone();
             &exe_path.pop();
 
