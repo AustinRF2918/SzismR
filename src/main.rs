@@ -1,6 +1,7 @@
 use std::env;
 use std::path::PathBuf;
 use std::process::Command;
+use std::collections::HashMap;
 
 extern crate regex;
 
@@ -56,6 +57,7 @@ fn command_driver(x : &mut Vec<String>)
     //Filling up data entry values for display.
     if x.len() > 1
     {
+        //First inserted argument is always command. Everything is a sentence in Szism.
         let command = x[1].clone();
 
         //Checks for show command, which will display all loaded scripts from RC file.
@@ -63,10 +65,7 @@ fn command_driver(x : &mut Vec<String>)
 
         if x[1] == "show"
         {
-            let target = x[1].clone();
-            let command_alt = x[1].clone();
-            let mut node = command_structure::comm::node::new(command_alt, target);
-            show_loaded_scripts(&mut node, flag_debug);
+            show_loaded_scripts(flag_debug);
         }
 
 
@@ -109,7 +108,8 @@ fn command_driver(x : &mut Vec<String>)
     }
 }
 
-fn show_loaded_scripts(node : &mut command_structure::comm::node, debug : bool)
+//Definately remake this to be more modular.
+fn show_loaded_scripts(debug : bool)
 {
     match env::current_exe() {
         Ok(mut exe_path) => {
@@ -122,19 +122,18 @@ fn show_loaded_scripts(node : &mut command_structure::comm::node, debug : bool)
             rc_stack.push("swdl.rc".to_string());
 
             //Create our parser object.
-            let h_parse = rc_parser::parse::hash_parser::new();
-            let loc = &node.get_target().clone();
             &exe_path.pop();
 
+            let command_hash = make_rc_dict(&exe_path, rc_stack, debug);
+
             //Parse the rc and, define our h_parse object as the dictionary of all the objects.
-            let command_hash = h_parse.parse_rc(&mutate_path(node, &exe_path, debug, rc_stack), debug);
 
             for value in command_hash.keys(){
                 println!("Loaded script: {}", value);
             }
         }
 
-        Err(e) => {
+        Err(_) => {
             //Debug portion to show transference of data,
             println!("Your executable is in a bad path. (Whatever that means...)");
 
@@ -171,11 +170,10 @@ fn execute_script(node : &mut command_structure::comm::node, debug : bool)
             rc_stack.push("swdl.rc".to_string());
 
             //Create our parser object.
-            let h_parse = rc_parser::parse::hash_parser::new();
             let loc = &node.get_target().clone();
             &exe_path.pop();
 
-            let command_hash = h_parse.parse_rc(&mutate_path(node, &exe_path, debug, rc_stack), debug);
+            let command_hash = make_rc_dict(&exe_path, rc_stack, debug);
 
             let mut plugin_stack = Vec::new();
 
@@ -199,7 +197,7 @@ fn execute_script(node : &mut command_structure::comm::node, debug : bool)
             };
             //Implement this as tokenizer.
 
-            let script_executable = mutate_path(node, &exe_path, debug, plugin_stack);
+            let script_executable = mutate_path(&exe_path, debug, plugin_stack);
 
             call_script(&script_executable, debug);
 
@@ -214,7 +212,7 @@ fn execute_script(node : &mut command_structure::comm::node, debug : bool)
 }
 
 
-fn mutate_path(node : &mut command_structure::comm::node, root : &PathBuf, debug : bool, plugin_tokens : Vec<String>) -> PathBuf
+fn mutate_path(root : &PathBuf, debug : bool, plugin_tokens : Vec<String>) -> PathBuf
 {
     //We're gonna return a new path without destroying our old root.
     let mut ret_path = root.clone();
@@ -227,7 +225,6 @@ fn mutate_path(node : &mut command_structure::comm::node, root : &PathBuf, debug
 
     if debug
     {
-        node.debug_display("Mutate Path".to_string());
         println!("  ____PATH DATA______");
         println!("      Base path name: {:?}", root);
         println!("      Mutated path name: {:?}", ret_path);
@@ -253,4 +250,11 @@ fn call_script(script_executable : &PathBuf, debug : bool)
     {
         println!("Process exited sucessfully with: {}", command_status);
     }
+}
+
+fn make_rc_dict(exe_path: &PathBuf, rc_stack: Vec<String>, debug: bool) -> HashMap<String, String>
+{
+    let h_parse = rc_parser::parse::hash_parser::new();
+    h_parse.parse_rc(&mutate_path(&exe_path, debug, rc_stack), debug)
+
 }
