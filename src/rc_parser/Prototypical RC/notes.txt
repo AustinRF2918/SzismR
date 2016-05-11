@@ -1,0 +1,20 @@
+Begin->
+    Read: ParsePack
+        -->Goto ParsePack.
+    Read: End:
+        -->Goto End.
+            -->Otherwise, Panic.
+
+
+ParsePack->
+    Read: ParseMultipleScripts
+        -->Increment Scope.
+        -->Goto Parsing Scripts.
+    Read: Descope
+        -->Decrement Scope.
+        -->Goto Parsing Descope.
+    Read: ParseScript
+        -->Goto Parsing Script.
+
+ParsingScript->
+    R

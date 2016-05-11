@@ -1,6 +1,11 @@
 use std::env;
+use std::path::Path;
 use std::path::PathBuf;
+use std::os;
 use std::process::Command;
+use std::fs::File;
+use std::io::Read;
+use regex::Regex;
 
 extern crate regex;
 
@@ -10,6 +15,7 @@ mod rc_parser;
 
 fn main()
 {
+
     //Collect our command line strings.
     let mut args: Vec<String> = env::args().collect();
 
@@ -50,6 +56,9 @@ fn command_driver(x : &mut Vec<String>)
         println!(".     A preset manager,                      .");
         println!(".           Code Generator,                  .");
         println!(".               DRY Facilitator.             .");
+        println!(".                                            .");
+        println!(".                                            .");
+        println!(".                                            .");
         println!("..............................................");
     }
 
@@ -57,18 +66,6 @@ fn command_driver(x : &mut Vec<String>)
     if x.len() > 1
     {
         let command = x[1].clone();
-
-        //Checks for show command, which will display all loaded scripts from RC file.
-        //We dont put this below because show does not take a perameter (yet).
-
-        if x[1] == "show"
-        {
-            let target = x[1].clone();
-            let command_alt = x[1].clone();
-            let mut node = command_structure::comm::node::new(command_alt, target);
-            show_loaded_scripts(&mut node, flag_debug);
-        }
-
 
         if x.len() > 2
         {
@@ -98,58 +95,16 @@ fn command_driver(x : &mut Vec<String>)
                 &node.debug_display("Function Driver".to_string());
             }
 
-            if x[1] == "run"
-            {
-                execute_script(&mut node, flag_debug);
-            }
-
-
+            execute_script(&mut node, flag_debug);
         }
-
-    }
-}
-
-fn show_loaded_scripts(node : &mut command_structure::comm::node, debug : bool)
-{
-    match env::current_exe() {
-        Ok(mut exe_path) => {
-            //Make tokenizer for our parseable RC from here.
-            //Parse stuff here.
-            let mut rc_stack = Vec::new();
-
-            //Parse a rc_location to get all our loaded plugins.
-            rc_stack.push("configuration".to_string());
-            rc_stack.push("swdl.rc".to_string());
-
-            //Create our parser object.
-            let h_parse = rc_parser::parse::hash_parser::new();
-            let loc = &node.get_target().clone();
-            &exe_path.pop();
-
-            //Parse the rc and, define our h_parse object as the dictionary of all the objects.
-            let command_hash = h_parse.parse_rc(&mutate_path(node, &exe_path, debug, rc_stack), debug);
-
-            for value in command_hash.keys(){
-                println!("Loaded script: {}", value);
-            }
-        }
-
-        Err(e) => {
-            //Debug portion to show transference of data,
-            println!("Your executable is in a bad path. (Whatever that means...)");
-
-            //Error code 2.
-            std::process::exit(2);
-        },
     }
 }
 
 //Get the second argument and use it to determine script attributes.
 fn execute_script(node : &mut command_structure::comm::node, debug : bool)
 {
-    //Match the current executable path.
-    match env::current_exe() {
-        Ok(mut exe_path) => {
+    match env::current_dir() {
+        Ok(exe_path) => {
             if debug
             {
                 //Our executable path was found. I'm not sure when this
@@ -171,11 +126,9 @@ fn execute_script(node : &mut command_structure::comm::node, debug : bool)
             rc_stack.push("swdl.rc".to_string());
 
             //Create our parser object.
-            let h_parse = rc_parser::parse::hash_parser::new();
+            let mut hParse = rc_parser::parse::hash_parser::new();
             let loc = &node.get_target().clone();
-            &exe_path.pop();
-
-            let command_hash = h_parse.parse_rc(&mutate_path(node, &exe_path, debug, rc_stack), debug);
+            let command_hash = hParse.parse_rc(&mutate_path(node, &exe_path, debug, rc_stack), debug);
 
             let mut plugin_stack = Vec::new();
 
