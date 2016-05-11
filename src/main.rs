@@ -55,21 +55,19 @@ fn command_driver(x : &mut Vec<String>)
     }
 
     //Filling up data entry values for display.
-    if x.len() > 1
+    if x.len() > 0
     {
         //First inserted argument is always command. Everything is a sentence in Szism.
         let ref command = x[1];
 
         //Checks for show command, which will display all loaded scripts from RC file.
 
-        if x.len() == 1
-        {
             //We dont put this below because show does not take a perameter (yet).
             if x[1] == "show"
             {
+                println!("HELLO");
                 show_loaded_scripts(flag_debug);
             }
-        }
 
 
         if x.len() > 2
@@ -133,6 +131,10 @@ fn show_loaded_scripts(debug : bool)
 
             //Parse the rc and, define our h_parse object as the dictionary of all the objects.
 
+            if debug
+            {
+                println!("FROM SCRIPT __SHOW__");
+            }
             for value in command_hash.keys(){
                 println!("Loaded script: {}", value);
             }
