@@ -58,14 +58,17 @@ fn command_driver(x : &mut Vec<String>)
     if x.len() > 1
     {
         //First inserted argument is always command. Everything is a sentence in Szism.
-        let command = x[1].clone();
+        let ref command = x[1];
 
         //Checks for show command, which will display all loaded scripts from RC file.
-        //We dont put this below because show does not take a perameter (yet).
 
-        if x[1] == "show"
+        if x.len() == 1
         {
-            show_loaded_scripts(flag_debug);
+            //We dont put this below because show does not take a perameter (yet).
+            if x[1] == "show"
+            {
+                show_loaded_scripts(flag_debug);
+            }
         }
 
 
@@ -97,6 +100,8 @@ fn command_driver(x : &mut Vec<String>)
                 &node.debug_display("Function Driver".to_string());
             }
 
+            //Run with our node perameter: this will run whatever
+            //script in whatever language we want.
             if x[1] == "run"
             {
                 execute_script(&mut node, flag_debug);

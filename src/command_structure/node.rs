@@ -18,9 +18,9 @@ pub mod comm{
     //and target.
 
     impl node{
-        pub fn new(arg : String, arg2 : String) -> node{
+        pub fn new(arg : &String, arg2 : String) -> node{
             node{
-                id : arg,
+                id : arg.clone(),
                 target : arg2,
                 flags : Vec::new()
             }
