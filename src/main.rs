@@ -4,10 +4,15 @@ use std::process::Command;
 use std::collections::HashMap;
 
 extern crate regex;
+extern crate ansi_term;
 
 mod command_structure;
 mod task_structure;
 mod rc_parser;
+use ansi_term::Colour::Green;
+use ansi_term::Colour::Red;
+use ansi_term::Colour::Yellow;
+use ansi_term::Colour::Blue;
 
 fn main()
 {
@@ -44,14 +49,14 @@ fn command_driver(x : &mut Vec<String>)
 
     if dialogue_debug == true
     {
-        println!("..............................................");
-        println!(".Szism Toolbox | Copyright 2016 | Austin Fell.");
-        println!("..............................................");
-        println!(".A file manager,                             .");
-        println!(".     A preset manager,                      .");
-        println!(".           Code Generator,                  .");
-        println!(".               DRY Facilitator.             .");
-        println!("..............................................");
+        println!("{}",Yellow.paint( ".............................................."));
+        println!("{}", Blue.paint(".Szism Toolbox | Copyright 2016 | Austin Fell."));
+        println!("{}", Green.paint(".............................................."));
+        println!("{}", Red.paint(".A file manager,                             ."));
+        println!("{}", Green.paint(".     A preset manager,                      ."));
+        println!("{}", Blue.paint(".           code generator,                  ."));
+        println!("{}", Yellow.paint(".               DRY facilitator.             ."));
+        println!("{}", Blue.paint(".............................................."));
     }
 
     //Filling up data entry values for display.
@@ -65,7 +70,6 @@ fn command_driver(x : &mut Vec<String>)
             //We dont put this below because show does not take a perameter (yet).
             if x[1] == "show"
             {
-                println!("HELLO");
                 show_loaded_scripts(flag_debug);
             }
 
@@ -104,10 +108,7 @@ fn command_driver(x : &mut Vec<String>)
             {
                 execute_script(&mut node, flag_debug);
             }
-
-
         }
-
     }
 }
 
@@ -136,13 +137,13 @@ fn show_loaded_scripts(debug : bool)
                 println!("FROM SCRIPT __SHOW__");
             }
             for value in command_hash.keys(){
-                println!("Loaded script: {}", value);
+                println!("Loaded script: {}", Green.paint(value.to_string()));
             }
         }
 
         Err(_) => {
             //Debug portion to show transference of data,
-            println!("Your executable is in a bad path. (Whatever that means...)");
+            println!("{}", Red.paint("Your executable is in a bad path. (Whatever that means...)"));
 
             //Error code 2.
             std::process::exit(2);
@@ -196,8 +197,8 @@ fn execute_script(node : &mut command_structure::comm::node, debug : bool)
                 },
 
                 None => {
-                    println!("That script does not exist :(.");
-                    println!("Exiting.");
+                    println!("{}", Red.paint("That script does not exist :(."));
+                    println!("{}", Red.paint("Exiting."));
                     //Error code 1 : Script not found.
                     std::process::exit(1);
                 },
@@ -211,7 +212,7 @@ fn execute_script(node : &mut command_structure::comm::node, debug : bool)
         },
         Err(e) => {
             //Executable path wasn't found.
-            println! ("Failed to get current executable directory: {}", e);
+            println! ("{}:{}", Red.paint("Failed to get current executable directory: {}"), e);
             //Debug portion to show transference of data,
             &node.debug_display("Execute Script ERROR".to_string());
         },
