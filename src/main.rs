@@ -9,6 +9,7 @@ extern crate ansi_term;
 mod command_structure;
 mod task_structure;
 mod rc_parser;
+mod arg_parser;
 use ansi_term::Colour::Green;
 use ansi_term::Colour::Red;
 use ansi_term::Colour::Yellow;
@@ -18,6 +19,10 @@ fn main()
 {
     //Collect our command line strings.
     let mut args: Vec<String> = env::args().collect();
+    let mut arg_parsed = arg_parser::parse::ArgumentObject::new();
+    arg_parsed.parse(env::args(), vec!["run".to_string()], vec!["fsAutoTemplater".to_string()], vec!["-d".to_string()]);
+    println!("{:?}", arg_parsed.noun_dict);
+
 
     //Place them into a command driver which analyizes them and
     //passes them off to other portions.
@@ -60,18 +65,16 @@ fn command_driver(x : &mut Vec<String>)
     }
 
     //Filling up data entry values for display.
-    if x.len() > 0
+    if x.len() != 0
     {
         //First inserted argument is always command. Everything is a sentence in Szism.
         let ref command = x[1];
 
-        //Checks for show command, which will display all loaded scripts from RC file.
-
-            //We dont put this below because show does not take a perameter (yet).
-            if x[1] == "show"
-            {
-                show_loaded_scripts(flag_debug);
-            }
+        //We dont put this below because show does not take a perameter (yet).
+        if x[1] == "show"
+        {
+            show_loaded_scripts(flag_debug);
+        }
 
 
         if x.len() > 2
