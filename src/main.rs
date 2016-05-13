@@ -21,7 +21,6 @@ fn main()
     let mut args: Vec<String> = env::args().collect();
     let mut arg_parsed = arg_parser::parse::ArgumentObject::new();
     arg_parsed.parse(env::args(), vec!["run".to_string()], vec!["fsAutoTemplater".to_string()], vec!["-d".to_string()]);
-    println!("{:?}", arg_parsed.noun_dict);
 
 
     //Place them into a command driver which analyizes them and
@@ -34,6 +33,13 @@ fn command_driver(x : &mut Vec<String>)
     //Probably should turn these into enumerative types.
     let mut flag_debug = false;
     let mut dialogue_debug = false;
+
+    if x.len() == 1
+    {
+        println!("{}", Red.paint("No commands entered (Replace this with help.)"));
+        std::process::exit(3);
+
+    }
 
     //Scan for important flags.
     //These may overwrite our original noun verb structures, which is
