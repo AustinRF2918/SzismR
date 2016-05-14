@@ -20,7 +20,12 @@ fn main()
     //Collect our command line strings.
     let mut args: Vec<String> = env::args().collect();
     let mut arg_parsed = arg_parser::parse::ArgumentObject::new();
-    arg_parsed.parse(env::args(), vec!["run".to_string()], vec!["fsAutoTemplater".to_string()], vec!["-d".to_string()]);
+    arg_parsed.parse(env::args(), vec!["run".to_string(), "show".to_string()], vec![
+    "fsAutoTemplater".to_string(),
+    "gulpInit".to_string(),
+    "sassInit".to_string(),
+    "bsInit".to_string(),
+    "htmlInit".to_string()], vec!["-d".to_string()]);
 
 
     //Place them into a command driver which analyizes them and
