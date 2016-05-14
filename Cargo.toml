@@ -1,0 +1,9 @@
+[package]
+name = "rSzism"
+version = "0.1.0"
+authors = ["Austin Fell <austinrf2918@yahoo.com>"]
+
+[dependencies]
+term = "0.4.4"
+regex = "0.1"
+ansi_term = "0.7"

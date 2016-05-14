@@ -24,14 +24,19 @@ fn main()
     arg_parsed.parse(env::args(),
      vec![
     "run",
-    "show"],
+    "show",
+    "make"],
      vec![
     "fsAutoTemplater",
     "gulpInit",
     "sassInit",
     "bsInit",
     "htmlInit"],
-     vec!["-d"]);
+    vec![
+    "-d",
+    "-dialogue",
+    "-web",
+     ]);
 
 
     //Place them into a command driver which analyizes them and
@@ -83,7 +88,7 @@ fn command_driver(arguments : &mut arg_parser::parse::ArgumentObject)
     let verb = arguments.get_verb();
     let flags = arguments.get_flags();
 
-    let mut node = command_structure::comm::node::new(verb, target, flags);
+    let mut node = command_structure::comm::node::new(verb, target, flags.clone());
 
 
     //Debug display.
@@ -98,8 +103,30 @@ fn command_driver(arguments : &mut arg_parser::parse::ArgumentObject)
     println!("{}", arguments.get_verb());
     if arguments.get_verb() == "run"
     {
-        execute_script(&mut node, flag_debug);
+        execute_script_utility(&mut node, flag_debug);
     }
+
+    if arguments.get_verb() == "make"
+    {
+        if contains(flags, "-web".to_string())
+        {
+            execute_script_make("web".to_string(), flag_debug);
+            println!("I suggest running 'szism run gulpInit'.");
+        }
+    }
+}
+
+fn contains(collect: Vec<String>, desired: String) -> bool
+{
+    for i in collect
+    {
+        if desired == i
+        {
+            return true;
+        }
+    }
+
+    return false;
 }
 
 //Definately remake this to be more modular.
@@ -112,8 +139,8 @@ fn show_loaded_scripts(debug : bool)
             let mut rc_stack = Vec::new();
 
             //Parse a rc_location to get all our loaded plugins.
-            rc_stack.push("configuration".to_string());
-            rc_stack.push("swdl.rc".to_string());
+            rc_stack.push("configuration");
+            rc_stack.push("swdl.rc");
 
             //Create our parser object.
             &exe_path.pop();
@@ -142,7 +169,7 @@ fn show_loaded_scripts(debug : bool)
 }
 
 //Get the second argument and use it to determine script attributes.
-fn execute_script(node : &mut command_structure::comm::node, debug : bool)
+fn execute_script_utility(node : &mut command_structure::comm::node, debug : bool)
 {
     //Match the current executable path.
     match env::current_exe() {
@@ -164,8 +191,8 @@ fn execute_script(node : &mut command_structure::comm::node, debug : bool)
             let mut rc_stack = Vec::new();
 
             //Parse a rc_location to get all our loaded plugins.
-            rc_stack.push("configuration".to_string());
-            rc_stack.push("swdl.rc".to_string());
+            rc_stack.push("configuration");
+            rc_stack.push("swdl.rc");
 
             //Create our parser object.
             let loc = &node.get_targets().clone();
@@ -173,18 +200,12 @@ fn execute_script(node : &mut command_structure::comm::node, debug : bool)
 
             let command_hash = make_rc_dict(&exe_path, rc_stack, debug);
 
-            let mut plugin_stack = Vec::new();
-
-            //Right now only works with standard plugins.
-            //We gotta parse the RC for the parse pack and
-            //append the pack value as well.
-            plugin_stack.push("plugins".to_string());
-            plugin_stack.push("std".to_string());
+            let mut plugin_stack = vec!["plugins", "std"];
 
             for i in loc {
                 match command_hash.get(i){
                     Some(t) => {
-                        plugin_stack.push(t.to_string());
+                        plugin_stack.push(t);
                     },
 
                     None => {
@@ -211,8 +232,31 @@ fn execute_script(node : &mut command_structure::comm::node, debug : bool)
     };
 }
 
+//Get the second argument and use it to determine script attributes.
+fn execute_script_make(mut t: String, debug : bool)
+{
+    //Match the current executable path.
+    match env::current_exe() {
+        Ok(mut exe_path) => {
+            &exe_path.pop();
+            t.push_str(".py");
+            let plugin_stack = vec!["plugins", "init", t.as_str()];
 
-fn mutate_path(root : &PathBuf, debug : bool, plugin_tokens : Vec<String>) -> PathBuf
+            let script_executable = mutate_path(&exe_path, debug, plugin_stack);
+
+            call_script(&script_executable, debug);
+
+        },
+        Err(e) => {
+            //Executable path wasn't found.
+            println! ("{}:{}", Red.paint("Failed to get current executable directory: {}"), e);
+            panic!("Failed to get HTML template make.")
+        },
+    };
+}
+
+
+fn mutate_path(root : &PathBuf, debug : bool, plugin_tokens : Vec<&str>) -> PathBuf
 {
     //We're gonna return a new path without destroying our old root.
     let mut ret_path = root.clone();
@@ -220,7 +264,7 @@ fn mutate_path(root : &PathBuf, debug : bool, plugin_tokens : Vec<String>) -> Pa
     //Get all the data from our tokenizer/database.
     for folder in plugin_tokens
     {
-        ret_path.push(folder);
+        ret_path.push(folder.to_string());
     }
 
     if debug
@@ -252,7 +296,7 @@ fn call_script(script_executable : &PathBuf, debug : bool)
     }
 }
 
-fn make_rc_dict(exe_path: &PathBuf, rc_stack: Vec<String>, debug: bool) -> HashMap<String, String>
+fn make_rc_dict(exe_path: &PathBuf, rc_stack: Vec<&str>, debug: bool) -> HashMap<String, String>
 {
     let h_parse = rc_parser::parse::hash_parser::new();
     h_parse.parse_rc(&mutate_path(&exe_path, debug, rc_stack), debug)

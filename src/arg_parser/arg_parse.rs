@@ -78,7 +78,6 @@ pub mod parse{
 
             //Get the arguments passed in, collect it to a string vec.
             let input : Vec<String> = args.collect();
-            println!("hi");
 
             //Set all our lists as our user defined noun/verbs.
             for i in verbs
