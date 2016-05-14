@@ -42,7 +42,7 @@ fn main()
 fn command_driver(arguments : &mut arg_parser::parse::ArgumentObject)
 {
     //Probably should turn these into enumerative types.
-    let mut flag_debug = true;
+    let mut flag_debug = false;
     let mut dialogue_debug = false;
 
     //Scan for important flags.
@@ -118,7 +118,7 @@ fn show_loaded_scripts(debug : bool)
             //Create our parser object.
             &exe_path.pop();
 
-            let command_hash = make_rc_dict(&exe_path, rc_stack, true);
+            let command_hash = make_rc_dict(&exe_path, rc_stack, debug);
 
             //Parse the rc and, define our h_parse object as the dictionary of all the objects.
 
