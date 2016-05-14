@@ -59,25 +59,41 @@ pub mod parse{
                 }
             }
 
-            pub fn parse(&mut self, args : env::Args, verbs : Vec<String>, nouns : Vec<String>, adjs : Vec<String>) {
+            pub fn get_flags(&mut self) -> Vec<String>
+            {
+                self.adj_dict.clone()
+            }
+
+            pub fn get_nouns(&mut self) -> Vec<String>
+            {
+                self.noun_dict.clone()
+            }
+
+            pub fn get_verb(&mut self) -> String
+            {
+                self.verb.clone()
+            }
+
+            pub fn parse(&mut self, args : env::Args, verbs : Vec<&str>, nouns : Vec<&str>, adjs : Vec<&str>) {
 
             //Get the arguments passed in, collect it to a string vec.
             let input : Vec<String> = args.collect();
+            println!("hi");
 
             //Set all our lists as our user defined noun/verbs.
             for i in verbs
             {
-                self.verb_set.insert(i);
+                self.verb_set.insert(i.to_string());
             }
 
             for i in nouns
             {
-                self.noun_set.insert(i);
+                self.noun_set.insert(i.to_string());
             }
 
             for i in adjs
             {
-                self.adj_set.insert(i);
+                self.adj_set.insert(i.to_string());
             }
 
             let mut counter = 0;
@@ -88,7 +104,6 @@ pub mod parse{
                 if counter != 1
                 {
                     self.current_parse_state = self.parse_iteration(i);
-                    println!("Test");
 
                     match &self.current_parse_state
                     {
@@ -96,7 +111,20 @@ pub mod parse{
                         {
                             panic!("Bad token at position: {}, Word: {}", counter, tok)
                         },
-                        _ => {},
+                        &ParseState::Verb(ref tok) =>
+                        {
+                            self.verb = tok.clone();
+                        },
+                        &ParseState::Noun(ref tok) =>
+                        {
+                            self.noun_dict.push(tok.clone());
+                        },
+                        &ParseState::Adj(ref tok) =>
+                        {
+                            self.adj_dict.push(tok.clone());
+                        },
+                        _ =>
+                        {},
                     }
             }
         }

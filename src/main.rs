@@ -18,38 +18,37 @@ use ansi_term::Colour::Blue;
 fn main()
 {
     //Collect our command line strings.
-    let mut args: Vec<String> = env::args().collect();
     let mut arg_parsed = arg_parser::parse::ArgumentObject::new();
-    arg_parsed.parse(env::args(), vec!["run".to_string(), "show".to_string()], vec![
-    "fsAutoTemplater".to_string(),
-    "gulpInit".to_string(),
-    "sassInit".to_string(),
-    "bsInit".to_string(),
-    "htmlInit".to_string()], vec!["-d".to_string()]);
+
+    //Preferably we put a parsed rc into this.
+    arg_parsed.parse(env::args(),
+     vec![
+    "run",
+    "show"],
+     vec![
+    "fsAutoTemplater",
+    "gulpInit",
+    "sassInit",
+    "bsInit",
+    "htmlInit"],
+     vec!["-d"]);
 
 
     //Place them into a command driver which analyizes them and
     //passes them off to other portions.
-    command_driver(&mut args);
+    command_driver(&mut arg_parsed);
 }
 
-fn command_driver(x : &mut Vec<String>)
+fn command_driver(arguments : &mut arg_parser::parse::ArgumentObject)
 {
     //Probably should turn these into enumerative types.
-    let mut flag_debug = false;
+    let mut flag_debug = true;
     let mut dialogue_debug = false;
-
-    if x.len() == 1
-    {
-        println!("{}", Red.paint("No commands entered (Replace this with help.)"));
-        std::process::exit(3);
-
-    }
 
     //Scan for important flags.
     //These may overwrite our original noun verb structures, which is
     //Okay, because then we can offer help.
-    for arg in x.iter()
+    for arg in arguments.get_flags().iter()
     {
         //Debug flag.
         if arg == "-d"
@@ -75,54 +74,31 @@ fn command_driver(x : &mut Vec<String>)
         println!("{}", Blue.paint(".............................................."));
     }
 
-    //Filling up data entry values for display.
-    if x.len() != 0
+    if arguments.get_verb() == "show"
     {
-        //First inserted argument is always command. Everything is a sentence in Szism.
-        let ref command = x[1];
+        show_loaded_scripts(flag_debug);
+    }
 
-        //We dont put this below because show does not take a perameter (yet).
-        if x[1] == "show"
-        {
-            show_loaded_scripts(flag_debug);
-        }
+    let target = arguments.get_nouns();
+    let verb = arguments.get_verb();
+    let flags = arguments.get_flags();
+
+    let mut node = command_structure::comm::node::new(verb, target, flags);
 
 
-        if x.len() > 2
-        {
-            let target = x[2].clone();
+    //Debug display.
+    //Only callable via -d flag. Developer tool.
+    if flag_debug
+    {
+        &node.debug_display("Function Driver".to_string());
+    }
 
-            //Make a node for our called functions, we can modify this
-            //into a callable script and run trees of em later!
-            let mut node = command_structure::comm::node::new(command, target);
-
-            //Push onto our node a bunch of our flags
-            if x.len() > 3
-            {
-                //All objects after our noun verb structure are
-                //modifiers/adjetives: flags. Thus, I search at
-                //the third index for these critical flags.
-                for i in 3..x.len()
-                {
-                    let temp = x[i].clone();
-                    &node.push_flag(temp);
-                }
-            }
-
-            //Debug display.
-            //Only callable via -d flag. Developer tool.
-            if flag_debug
-            {
-                &node.debug_display("Function Driver".to_string());
-            }
-
-            //Run with our node perameter: this will run whatever
-            //script in whatever language we want.
-            if x[1] == "run"
-            {
-                execute_script(&mut node, flag_debug);
-            }
-        }
+    //Run with our node perameter: this will run whatever
+    //script in whatever language we want.
+    println!("{}", arguments.get_verb());
+    if arguments.get_verb() == "run"
+    {
+        execute_script(&mut node, flag_debug);
     }
 }
 
@@ -142,7 +118,7 @@ fn show_loaded_scripts(debug : bool)
             //Create our parser object.
             &exe_path.pop();
 
-            let command_hash = make_rc_dict(&exe_path, rc_stack, debug);
+            let command_hash = make_rc_dict(&exe_path, rc_stack, true);
 
             //Parse the rc and, define our h_parse object as the dictionary of all the objects.
 
@@ -176,7 +152,7 @@ fn execute_script(node : &mut command_structure::comm::node, debug : bool)
                 //Our executable path was found. I'm not sure when this
                 //wouldn't be possible to find? Maybe if we were running
                 //from a stream or something? I'm not sure...
-                println!("Executing Script: {}", node.get_target());
+                println!("Executing Scripts: {:?}", node.get_targets());
                 println!("From executable directory {}", exe_path.display());
 
                 //Debug portion to show transference of data,
@@ -192,7 +168,7 @@ fn execute_script(node : &mut command_structure::comm::node, debug : bool)
             rc_stack.push("swdl.rc".to_string());
 
             //Create our parser object.
-            let loc = &node.get_target().clone();
+            let loc = &node.get_targets().clone();
             &exe_path.pop();
 
             let command_hash = make_rc_dict(&exe_path, rc_stack, debug);
@@ -205,18 +181,20 @@ fn execute_script(node : &mut command_structure::comm::node, debug : bool)
             plugin_stack.push("plugins".to_string());
             plugin_stack.push("std".to_string());
 
-            match command_hash.get(loc){
-                Some(t) => {
-                    plugin_stack.push(t.to_string());
-                },
+            for i in loc {
+                match command_hash.get(i){
+                    Some(t) => {
+                        plugin_stack.push(t.to_string());
+                    },
 
-                None => {
-                    println!("{}", Red.paint("That script does not exist :(."));
-                    println!("{}", Red.paint("Exiting."));
-                    //Error code 1 : Script not found.
-                    std::process::exit(1);
-                },
-            };
+                    None => {
+                        println!("{}", Red.paint("That script does not exist :(."));
+                        println!("{}", Red.paint("Exiting."));
+                        //Error code 1 : Script not found.
+                        std::process::exit(1);
+                    },
+                };
+            }
             //Implement this as tokenizer.
 
             let script_executable = mutate_path(&exe_path, debug, plugin_stack);
@@ -278,5 +256,4 @@ fn make_rc_dict(exe_path: &PathBuf, rc_stack: Vec<String>, debug: bool) -> HashM
 {
     let h_parse = rc_parser::parse::hash_parser::new();
     h_parse.parse_rc(&mutate_path(&exe_path, debug, rc_stack), debug)
-
 }

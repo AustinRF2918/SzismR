@@ -7,8 +7,8 @@
 pub mod comm{
     pub struct node
     {
-        id: String,
-        target: String,
+        command: String,
+        targets: Vec<String>,
         flags:  Vec<String>
     }
 
@@ -18,27 +18,22 @@ pub mod comm{
     //and target.
 
     impl node{
-        pub fn new(arg : &String, arg2 : String) -> node{
+        pub fn new(commandData : String, targetsData : Vec<String>, flagsData : Vec<String>) -> node{
             node{
-                id : arg.clone(),
-                target : arg2,
-                flags : Vec::new()
+                command : commandData,
+                targets : targetsData,
+                flags : flagsData,
             }
-        }
-
-        pub fn push_flag(&mut self, arg: String){
-            //Push an execution flag to our command node.
-            self.flags.push(arg);
         }
 
         pub fn get_command(&mut self) -> &String
         {
-            return &self.id;
+            return &self.command;
         }
 
-        pub fn get_target(&mut self) -> &String
+        pub fn get_targets(&mut self) -> &Vec<String>
         {
-            return &self.target;
+            return &self.targets;
         }
 
         pub fn get_flags(&mut self) -> &Vec<String>
@@ -52,13 +47,20 @@ pub mod comm{
             println!("_______DEBUG_______");
             println!("       CALLER:");
             println!("          {}", arg);
-            println!("Executing Script: {}", &self.get_command());
-            println!("With Target: {}", &self.get_target());
+            println!("Executing Command: {}", &self.get_command());
+
+            println!("Target List");
+            for i in &self.targets
+            {
+                 println!("{:?}", i)
+            }
+
             println!("Flag List: ");
             for i in &self.flags
             {
                  println!("{:?}", i)
             }
+
             println!(" ");
         }
     }
