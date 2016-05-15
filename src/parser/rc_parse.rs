@@ -14,38 +14,43 @@ pub mod rc_parser{
     use std::path::PathBuf;
     use std::fs::File;
     use std::io::Read;
+    use std::process;
 
+    pub enum ParseState{
+        SOP,
+        ParsePack(String),
+        ParseScripts(String),
+        ParseEntry(String),
+        ParseScript(String),
+        ParseEnd(String),
+        EOP(String),
+    }
 
-    //This is the "Pluginable" Portion of our code.
-    pub struct HashParser
-    {
+    pub struct RCObject{
         tokens:  Vec<String>,
     }
 
-    impl HashParser{
-        pub fn new() -> HashParser{
-                HashParser{
+    impl RCObject{
+        pub fn new() -> RCObject{
+                RCObject{
                 tokens : Vec::new(),
             }
         }
 
-        pub fn parse_rc(&self, root : &PathBuf, debug : bool) -> HashMap<String, String>
+        pub fn parse(&self, root : &PathBuf, debug : bool) -> HashMap<String, String>
         {
-
-
             //We're gonna return a new path without destroying our old root.
-            let ret_path = root.clone();
-            let mut slice = &mut String::new();
+            let mut string_portion = &mut String::new();
             let mut ret_hash : HashMap<String, String> = HashMap::new();
 
-            let rc_data = match File::open(&ret_path){
+            match File::open(&root){
                 Ok(mut f) => {
 
 
-                    f.read_to_string(slice).unwrap();
+                    f.read_to_string(string_portion).unwrap();
                     {
                         //Parse tokens by new line.
-                        let tokens : Vec<&str> = slice.split('\n').collect();
+                        let tokens : Vec<&str> = string_portion.split('\n').collect();
 
                         let p_pack = regex::Regex::new(r"(.*)\.parsePack").unwrap();
                         let p_ms_entry = regex::Regex::new(r"(.*)\.parseScripts").unwrap();
@@ -59,310 +64,114 @@ pub mod rc_parser{
                         let mut current_key = String::new();
                         let mut current_path = String::new();
 
-
-                        //Simple C++ Style enum, no fancy stuff.
-                        //
-                        //General State Information and possbilities.
-                        enum State {
-                            Begin,
-                            End,
-                            ParsingPack,
-                            ParsingScriptEntry,
-                            ParsingScripts,
-                            ParsingDescope,
-                            ParsingEntry,
-                            ParsingDependancy,
-                        }
-
-                        //*************************************************//
-                        //------------   These are simply guided ----------//
-                        //------------   states, we only need    ----------//
-                        //------------   one enum to represent   ----------//
-                        //------------   this.                   ----------//
-                        //*************************************************//
-                        /////////////////////////////////////////////////////
-                        //Our being state that can lead to other stuff :)
-                        //enum Begin
-                        //{
-                        //    ParsingPack,
-                        //    End,
-                        //}
-
-                        //Our parsing a full plugin pack state.
-                        //enum ParsingPack
-                        //{
-                        //    ParsingScriptEntry,
-                        //    ParsingScripts,
-                        //    ParsingDescope,
-                        //}
-
-                        //Script entry state: One way.
-                        //enum ParsingScriptEntry
-                        //{
-                        //    ParsingScript,
-                        //}
-
-                        //Parsing script state. For parsing single scripts.
-                        //enum ParsingScript
-                        //{
-                        //    ParsingScript,
-                        //    ParsingDescope,
-                        //    ParsingScriptEntry,
-                        //}
-
-                        //All our ends and descopes, don't confuse End with descoping.
-                        //end signifies end of input and that our file may no longer read.
-                        //enum ParsingDescope
-                        //{
-                        //    ParsingDescope,
-                        //    ParsingPack,
-                        //    ParsingScripts,
-                        //    End
-                        //}
-                        ///////////////////////////////////////////////////////
-
-                        let mut FSA: State = State::Begin;
-
-                        //NOTES:
-                        //IIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII
-                        //Preferably we package this into a simplified Finite State Machine
-                        //Library for producting simple states and objects to hold these states
-                        //using idomatic Rust. But for now I am just gonna use this simple
-                        //match/if cases. I Should probably also create more descriptive
-                        //error messages.
-                        //IIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII
+                        let mut state: ParseState = ParseState::SOP;
+                        
                         for i in tokens
                         {
-                            match FSA{
-                                State::Begin => {
+                            match state
+                            {
+                                ParseState::SOP =>
+                                {
                                     if p_pack.is_match(i)
                                     {
-                                        if debug
-                                        {
-                                            println!("Parsing RC: Current State: ParsingPack");
-                                        }
-
                                         scope += 1;
-                                        FSA = State::ParsingPack;
+                                        state = ParseState::ParsePack(i.to_string());
                                     }
                                     else
                                     {
-                                         panic!("Your RC Files syntax is corrupt.");
+                                        println!("Error parsing RC File");
+                                        ::std::process::exit(3);
                                     }
-
                                 },
-                                State::ParsingPack => {
-                                    if p_ms_entry.is_match(i)
+                                ParseState::ParsePack(data) =>
+                                {
+                                    if p_pack.is_match(i)
                                     {
-                                        if debug
-                                        {
-                                            println!("Parsing RC: Current State: ParsingScripts");
-                                        }
-
                                         scope += 1;
-                                         FSA = State::ParsingScripts;
-                                    }
-                                    else if p_descope.is_match(i)
-                                    {
-                                        if debug
-                                        {
-                                            println!("Parsing RC: Current State: ParsingDescope");
-                                        }
-
-                                        scope -= 1;
-                                        FSA = State::ParsingDescope;
-                                    }
-                                    else if p_s_entry.is_match(i)
-                                    {
-                                        if debug
-                                        {
-                                            println!("Parsing RC: Current State: ParsingScriptEntry");
-                                        }
-
-                                         FSA = State::ParsingScriptEntry;
+                                        state = ParseState::ParsePack(i.to_string());
                                     }
                                     else
                                     {
-                                         panic!("Your RC Files syntax is corrupt.");
-                                    }
-
-                                },
-
-                                State::ParsingScripts => {
-                                    if p_descope.is_match(i)
-                                    {
-                                        if debug
-                                        {
-                                            println!("Parsing RC: Current State: ParsingDescope");
-                                        }
-
-                                        scope -= 1;
-                                        FSA = State::ParsingDescope;
-                                    }
-                                    else if p_s_entry.is_match(i)
-                                    {
-                                        let key_capture = p_s_entry.captures(i).unwrap();
-                                        current_key = key_capture.name("script_caller").unwrap().replace("\n", "").replace("\r", "").trim().to_string();
-
-                                        if debug
-                                        {
-                                            println!("Parsing RC: Current State: ParsingScriptEntry");
-                                        }
-
-                                         FSA = State::ParsingScriptEntry;
-                                    }
-                                    else
-                                    {
-                                         panic!("Your RC Files syntax is corrupt.");
+                                        println!("Error parsing RC File");
+                                        ::std::process::exit(3);
                                     }
                                 },
-
-                                State::ParsingScriptEntry => {
-                                    if s_entry.is_match(i)
+                                ParseState::ParseScripts(data) =>
+                                {
+                                    if p_pack.is_match(i)
                                     {
-                                        let path_capture = s_entry.captures(i).unwrap();
-                                        current_path = path_capture.name("script_entry").unwrap().replace("\n", "").replace("\r", "").trim().to_string();
-
-                                        ret_hash.insert(current_key.to_string(), current_path.to_string());
-
-                                        //Push key value pair.
-                                        if debug
-                                        {
-                                            println!("value being added: {}", &current_key);
-                                            println!("path being added: {}", &current_path);
-                                            println!("Parsing RC: Current State: ParsingEntry");
-                                        }
-
-                                        FSA = State::ParsingEntry;
-                                    }
-                                    else
-                                    {
-                                         panic!("Your RC Files syntax is corrupt.");
-                                    }
-                                },
-                                State::ParsingEntry => {
-                                    if p_descope.is_match(i)
-                                    {
-                                        if debug
-                                        {
-                                             println!("Parsing RC: Current State: ParsingDescope ");
-                                        }
-
-                                        scope -= 1;
-                                        FSA = State::ParsingDescope;
-                                    }
-                                    else if s_dependancy.is_match(i)
-                                    {
-                                        if debug
-                                        {
-                                            println!("Parsing RC: Current State: ParsingDependancy");
-                                        }
-
-                                        FSA = State::ParsingDependancy;
-                                    }
-                                    else
-                                    {
-                                         panic!("Your RC Files syntax is corrupt.");
-                                    }
-                                },
-                                State::ParsingDependancy => {
-
-                                    if p_descope.is_match(i)
-                                    {
-                                        if debug
-                                        {
-                                             println!("Parsing RC: Current State: ParsingDescope ");
-                                        }
-
-                                        scope -= 1;
-                                        FSA = State::ParsingDescope;
-                                    }
-                                    else if p_s_entry.is_match(i)
-                                    {
-                                        if debug
-                                        {
-                                            println!("Parsing RC: Current State: ParsingEntry");
-                                        }
-
-                                        FSA = State::ParsingEntry;
-                                    }
-                                    else if s_dependancy.is_match(i)
-                                    {
-                                         if debug
-                                        {
-                                            println!("Parsing RC: Current State: ParsingDependancy");
-                                        }
-
-                                        FSA = State::ParsingDependancy;
-                                    }
-                                    else
-                                    {
-                                         panic!("Your RC Files syntax is corrupt.");
-                                    }
-                                },
-                                State::ParsingDescope => {
-                                    if p_descope.is_match(i)
-                                    {
-                                        if debug
-                                        {
-                                             println!("Parsing RC: Current State: ParsingDescope");
-                                        }
-
-                                        scope -= 1;
-                                        FSA = State::ParsingDescope;
-                                    }
-                                    else if p_pack.is_match(i)
-                                    {
-                                        if debug
-                                        {
-                                             println!("Parsing RC: Currennt State: ParsingPack");
-                                        }
-
+                                        current_key = data;
                                         scope += 1;
-                                        FSA = State::ParsingPack;
-                                    }
-                                    else if p_ms_entry.is_match(i)
-                                    {
-                                        if debug
-                                        {
-                                             println!("Parsing RC: Current State: ParsingScripts");
-                                        }
-
-                                        scope += 1;
-                                         FSA = State::ParsingScripts;
-                                    }
-                                    else if scope == 0
-                                    {
-                                        println!("Done");
-                                        FSA = State::End;
+                                        state = ParseState::ParsePack(i.to_string());
                                     }
                                     else
                                     {
-                                         panic!("Your RC Files syntax is corrupt.");
+                                        println!("Error parsing RC File");
+                                        ::std::process::exit(3);
                                     }
                                 },
-                                State::End => {
-                                         println!("Done");
+                                ParseState::ParseEntry(data) =>
+                                {
+                                    if p_pack.is_match(i)
+                                    {
+                                        ret_hash.insert(data, current_key);
+                                        scope += 1;
+                                        state = ParseState::ParsePack(i.to_string());
+                                    }
+                                    else
+                                    {
+                                        println!("Error parsing RC File");
+                                        ::std::process::exit(3);
+                                    }
+                                },
+                                ParseState::ParseScript(data) =>
+                                {
+                                    if p_pack.is_match(i)
+                                    {
+                                        ret_hash.insert(data, current_key);
+                                        scope += 1;
+                                        state = ParseState::ParsePack(i.to_string());
+                                    }
+                                    else
+                                    {
+                                        println!("Error parsing RC File");
+                                        ::std::process::exit(3);
+                                    }
+                                },
+                                ParseState::ParseEnd(data) =>
+                                {
+                                    if p_pack.is_match(i)
+                                    {
+                                        ret_hash.insert(data, current_key);
+                                        scope += 1;
+                                        state = ParseState::ParsePack(i.to_string());
+                                    }
+                                    else
+                                    {
+                                        println!("Error parsing RC File");
+                                        ::std::process::exit(3);
+                                    }
+                                },
+                                ParseState::EOP(data) =>
+                                {
+                                    if p_pack.is_match(i)
+                                    {
+                                        ret_hash.insert(data, current_key);
+                                        scope += 1;
+                                        state = ParseState::ParsePack(i.to_string());
+                                    }
+                                    else
+                                    {
+                                        println!("Error parsing RC File");
+                                        ::std::process::exit(3);
+                                    }
+                                },
+                                _ =>
+                                {
                                 }
                             }
-                                //match i
-                                //{
-                                //    p_pack.is_match(i) => {
-                                //        println!("Parsing Pack :{}", i.trim());
-                                //    },
-                                //    p_s_entry(i) => {
-                                //        println!("Parsing Script Entry Point: {}", i.trim());
-                                //    },
-                                //    p_script(i) => {
-                                //        println!("Parsing Scripts: {}", i.trim());
-                                //    },
-                                //    p_descope(i) => {
-                                //        println!("Descope: {}", i.trim());
-                                //    },
-                                //    _ => {
-                                //        println!("Error: {}", i.trim());
-                                //    }
                         }
+
                         if debug
                         {
                             println!(" ");
