@@ -9,10 +9,7 @@
 
 pub mod parse{
 
-    extern crate regex;
     use regex::Regex;
-    use std::str;
-    use std::slice;
     use std::env;
     use std::collections::HashSet;
 
@@ -108,7 +105,8 @@ pub mod parse{
                     {
                         &ParseState::Bad(ref tok) =>
                         {
-                            panic!("Bad token at position: {}, Word: {}", counter, tok)
+                            println!("Bad token at position: {}, Word: {}", counter, tok);
+                            ::std::process::exit(3);
                         },
                         &ParseState::Verb(ref tok) =>
                         {

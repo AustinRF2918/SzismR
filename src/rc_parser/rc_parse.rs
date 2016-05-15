@@ -10,125 +10,21 @@
 pub mod parse{
 
     extern crate regex;
-    use regex::Regex;
     use std::collections::HashMap;
     use std::path::PathBuf;
     use std::fs::File;
     use std::io::Read;
-    use std::str;
-    use std::slice;
 
 
     //This is the "Pluginable" Portion of our code.
-    enum ParseState{
-        ParseBeginDenoter(Regex),
-        ParsePackPath(Regex),
-        ParseScriptsDenoter(Regex),
-        ParseEntryDenoter(Regex),
-        ParseEntryPath(Regex),
-        ParseScriptPath(Regex),
-        ParseDescopeDenoter(Regex),
-        ParseEndDenoter(Regex),
-    }
-    
-    struct lineParseMatrix{
-        //Put enumerative state and it's possbile edges (other states
-        //with regex to say "yes you can do that".
-
-        //                Our Node        Our Edge
-        mat_map : HashMap<ParseState, Vec<ParseState>>,
-        //Scheme:
-        //    1. ParseBegin ------> get vector back
-        //    2. run through vector, does it(erator) pass regex? -----> parse_state = this.
-        //    3. not found?
-        //        4. is it conservative?
-        //            Yes -> Crash Program.
-        //            No  -> Mantain State.
-        //    otherwise...    
-        //    4. Has a signal been sent that we are done?
-        //    5. If yes, check for finish state.
-        //    6. not finish state?
-        //        7. is it conservative?
-        //            Yes -> Crash Program.
-        //            No  -> Force End State.
-        //    otherwise...
-        //    8. go-to 1
-
-        parse_state : ParseState,
-        is_conservative : bool,
-        parse_scope: i32, //We could do this with states, but this is way easier.
-    }
-    
-    //TODO - allow lineParseMatrix to be pushed states.
-    //Use an enum instead of a string that contains a regex
-    //and a string. This will probably be way more expandable.
-    
-    
-    struct lineParseMap{
-        //Not sure if these have to be mutable like this..
-        parse_map : HashMap<String, Regex>,
-        parse_state : String,
-        parse_state_regex : Regex,
-        is_conservative : bool
-    }
-
-    impl lineParseMap{
-        pub fn new(mut self) -> lineParseMap{
-            //By default our parser is "Conservative"
-            //That means that if we come to a state
-            //we don't have an answer for, or parser
-            //crashes. Otherwise it will continue and
-            //simply not change state.
-
-            self.is_conservative = true;
-            self
-        }
-
-        pub fn push_mapping(&mut self, state : String, re : Regex)
-        {
-            self.parse_map.insert(state, re);
-        }
-
-        pub fn set_liberal(&mut self)
-        {
-            self.is_conservative = false;
-        }
-
-        pub fn switch_state(&mut self, state : String, debug : bool) 
-        {
-            if self.parse_map.contains_key(&state){
-                if debug{
-                        println!("Parser to: {} going from: {}", state, &self.parse_state);
-                }
-                self.parse_state = state;
-            }
-            else{
-                if self.is_conservative
-                {
-                    panic!("Parser set on conservative mode found unparsable input: {} at state : {}", state, &self.parse_state);
-
-                }
-                else
-                {
-                    if debug{
-                        println!("Parser set on liberal mode found unparsable input: {} at state : {}", state, &self.parse_state);
-
-                    }
-
-                }
-
-            }
-        }
-    }
-        
-    pub struct hash_parser
+    pub struct HashParser 
     {
         tokens:  Vec<String>,
     }
 
-    impl hash_parser{
-        pub fn new() -> hash_parser{
-                hash_parser{
+    impl HashParser{
+        pub fn new() -> HashParser{
+                HashParser{
                 tokens : Vec::new(),
             }
         }
@@ -138,7 +34,7 @@ pub mod parse{
 
 
             //We're gonna return a new path without destroying our old root.
-            let mut ret_path = root.clone();
+            let ret_path = root.clone();
             let mut slice = &mut String::new();
             let mut ret_hash : HashMap<String, String> = HashMap::new();
 

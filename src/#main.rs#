@@ -111,7 +111,6 @@ fn command_driver(arguments : &mut arg_parser::parse::ArgumentObject)
         if contains(flags, "-web".to_string())
         {
             execute_script_make("web".to_string(), flag_debug);
-            println!("I suggest running 'szism run gulpInit'.");
         }
     }
 }
@@ -237,8 +236,7 @@ fn execute_script_make(mut t: String, debug : bool)
 {
     //Match the current executable path.
     match env::current_exe() {
-        Ok(mut exe_path) => {
-            &exe_path.pop();
+        Ok(exe_path) => {
             t.push_str(".py");
             let plugin_stack = vec!["plugins", "init", t.as_str()];
 
@@ -298,6 +296,6 @@ fn call_script(script_executable : &PathBuf, debug : bool)
 
 fn make_rc_dict(exe_path: &PathBuf, rc_stack: Vec<&str>, debug: bool) -> HashMap<String, String>
 {
-    let h_parse = rc_parser::parse::HashParser::new();
+    let h_parse = rc_parser::parse::hash_parser::new();
     h_parse.parse_rc(&mutate_path(&exe_path, debug, rc_stack), debug)
 }
