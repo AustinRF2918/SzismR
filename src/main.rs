@@ -49,22 +49,7 @@ fn command_driver(arguments : &mut parser::argument_parser::ArgumentObject)
     let mut flag_debug = false;
     let mut dialogue_debug = false;
 
-    //Scan for important flags.
-    //These may overwrite our original noun verb structures, which is
-    //Okay, because then we can offer help.
-    for arg in arguments.get_flags().iter()
-    {
-        //Debug flag.
-        if arg == "-d"
-        {
-            flag_debug = true;
-        }
 
-        if arg == "-dialogue"
-        {
-            dialogue_debug = true;
-        }
-    }
 
     if dialogue_debug == true
     {
@@ -78,17 +63,26 @@ fn command_driver(arguments : &mut parser::argument_parser::ArgumentObject)
         println!("{}", Blue.paint(".............................................."));
     }
 
+    let target = arguments.get_nouns();
+    let verb = arguments.get_verb();
+    let flags = arguments.get_flags();
+
+    //Scan for important flags.
+    if contains(&flags, "-d")
+    {
+            flag_debug = true;
+    }
+
+    if contains(&flags, "-dialogue")
+    {
+            dialogue_debug = true;
+    }
     if arguments.get_verb() == "show"
     {
         show_loaded_scripts(flag_debug);
     }
 
-    let target = arguments.get_nouns();
-    let verb = arguments.get_verb();
-    let flags = arguments.get_flags();
-
     let mut node = command_structure::comm::node::new(verb, target, flags.clone());
-
 
     //Debug display.
     //Only callable via -d flag. Developer tool.
@@ -107,7 +101,7 @@ fn command_driver(arguments : &mut parser::argument_parser::ArgumentObject)
 
     if arguments.get_verb() == "make"
     {
-        if contains(flags, "-web".to_string())
+        if contains(&flags, "-web")
         {
             execute_script_make("web".to_string(), flag_debug);
             println!("I suggest running 'szism run gulpInit'.");
@@ -115,11 +109,11 @@ fn command_driver(arguments : &mut parser::argument_parser::ArgumentObject)
     }
 }
 
-fn contains(collect: Vec<String>, desired: String) -> bool
+fn contains(collect: &Vec<String>, desired: &str) -> bool
 {
-    for i in collect
+    for ref i in collect
     {
-        if desired == i
+        if &desired == i
         {
             return true;
         }
@@ -283,7 +277,7 @@ fn call_script(script_executable : &PathBuf, debug : bool)
     //Preferably port all of the old scripts to Rust.
     //Call our python scripts with python3, should be built into bashrc. put pathname as argument.
     let command_status = Command::new("python3")
-                                     .arg(script_executable).status().unwrap_or_else(
+        .arg(script_executable).status().unwrap_or_else(
         |e| {
             panic!("Failed to execute process: {}", e);
         }
