@@ -7,7 +7,7 @@
 
 
 
-pub mod parse{
+pub mod rc_parser{
 
     extern crate regex;
     use std::collections::HashMap;
@@ -17,7 +17,7 @@ pub mod parse{
 
 
     //This is the "Pluginable" Portion of our code.
-    pub struct HashParser 
+    pub struct HashParser
     {
         tokens:  Vec<String>,
     }

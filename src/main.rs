@@ -8,8 +8,7 @@ extern crate ansi_term;
 
 mod command_structure;
 mod task_structure;
-mod rc_parser;
-mod arg_parser;
+mod parser;
 use ansi_term::Colour::Green;
 use ansi_term::Colour::Red;
 use ansi_term::Colour::Yellow;
@@ -18,7 +17,7 @@ use ansi_term::Colour::Blue;
 fn main()
 {
     //Collect our command line strings.
-    let mut arg_parsed = arg_parser::parse::ArgumentObject::new();
+    let mut arg_parsed = parser::argument_parser::ArgumentObject::new();
 
     //Preferably we put a parsed rc into this.
     arg_parsed.parse(env::args(),
@@ -44,7 +43,7 @@ fn main()
     command_driver(&mut arg_parsed);
 }
 
-fn command_driver(arguments : &mut arg_parser::parse::ArgumentObject)
+fn command_driver(arguments : &mut parser::argument_parser::ArgumentObject)
 {
     //Probably should turn these into enumerative types.
     let mut flag_debug = false;
@@ -298,6 +297,6 @@ fn call_script(script_executable : &PathBuf, debug : bool)
 
 fn make_rc_dict(exe_path: &PathBuf, rc_stack: Vec<&str>, debug: bool) -> HashMap<String, String>
 {
-    let h_parse = rc_parser::parse::HashParser::new();
+    let h_parse = parser::rc_parser::HashParser::new();
     h_parse.parse_rc(&mutate_path(&exe_path, debug, rc_stack), debug)
 }

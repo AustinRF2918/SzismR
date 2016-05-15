@@ -7,12 +7,9 @@
 
 
 
-pub mod parse{
+pub mod argument_parser{
 
-    extern crate regex;
     use regex::Regex;
-    use std::str;
-    use std::slice;
     use std::env;
     use std::collections::HashSet;
 
@@ -59,25 +56,40 @@ pub mod parse{
                 }
             }
 
-            pub fn parse(&mut self, args : env::Args, verbs : Vec<String>, nouns : Vec<String>, adjs : Vec<String>) {
+            pub fn get_flags(&mut self) -> Vec<String>
+            {
+                self.adj_dict.clone()
+            }
+
+            pub fn get_nouns(&mut self) -> Vec<String>
+            {
+                self.noun_dict.clone()
+            }
+
+            pub fn get_verb(&mut self) -> String
+            {
+                self.verb.clone()
+            }
+
+            pub fn parse(&mut self, args : env::Args, verbs : Vec<&str>, nouns : Vec<&str>, adjs : Vec<&str>) {
 
             //Get the arguments passed in, collect it to a string vec.
-            let input : Vec<&str> = args.collect().split(0).unwrap();
+            let input : Vec<String> = args.collect();
 
             //Set all our lists as our user defined noun/verbs.
             for i in verbs
             {
-                self.verb_set.insert(i);
+                self.verb_set.insert(i.to_string());
             }
 
             for i in nouns
             {
-                self.noun_set.insert(i);
+                self.noun_set.insert(i.to_string());
             }
 
             for i in adjs
             {
-                self.adj_set.insert(i);
+                self.adj_set.insert(i.to_string());
             }
 
             let mut counter = 0;
@@ -85,18 +97,34 @@ pub mod parse{
             for i in input
             {
                 counter = counter + 1;
-                self.current_parse_state = self.parse_iteration(i);
-                println!("Test");
-
-                match &self.current_parse_state
+                if counter != 1
                 {
-                    &ParseState::Bad(tok) =>
+                    self.current_parse_state = self.parse_iteration(i);
+
+                    match &self.current_parse_state
                     {
-                        panic!("Bad token at position: {}, Word: {}", counter, tok)
-                    },
-                    _ => {},
-                }
+                        &ParseState::Bad(ref tok) =>
+                        {
+                            println!("Bad token at position: {}, Word: {}", counter, tok);
+                            ::std::process::exit(3);
+                        },
+                        &ParseState::Verb(ref tok) =>
+                        {
+                            self.verb = tok.clone();
+                        },
+                        &ParseState::Noun(ref tok) =>
+                        {
+                            self.noun_dict.push(tok.clone());
+                        },
+                        &ParseState::Adj(ref tok) =>
+                        {
+                            self.adj_dict.push(tok.clone());
+                        },
+                        _ =>
+                        {},
+                    }
             }
+        }
         }
 
         pub fn get_parsed(&mut self) -> (&String, &Vec<String>, &Vec<String>)
@@ -104,24 +132,24 @@ pub mod parse{
             (&self.verb, &self.noun_dict, &self.adj_dict)
         }
 
-        fn parse_iteration(&mut self, token : &str) -> ParseState
+        fn parse_iteration(&mut self, token : String) -> ParseState
         {
             match self.current_parse_state
             {
                 ParseState::SOP =>
                 {
-                    if self.verb_set.contains(&token.to_string())
+                    if self.verb_set.contains(&token)
                     {
-                        ParseState::Verb(token.to_string())
+                        ParseState::Verb(token)
                     }
                     else
                     {
-                        ParseState::Bad(token.to_string())
+                        ParseState::Bad(token)
                     }
                 },
                 ParseState::Verb(_) =>
                 {
-                    if self.noun_set.contains(&token.to_string())
+                    if self.noun_set.contains(&token)
                     {
                         ParseState::Noun(token)
                     }
