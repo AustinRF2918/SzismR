@@ -160,6 +160,7 @@ pub mod rc_parser{
 
                         let mut current_key = String::new();
                         let mut current_path = String::new();
+                        let mut start_buffer = false;
                         let mut scope = 0;
 
                         let mut state: ParseState = ParseState::SOP;
@@ -168,10 +169,30 @@ pub mod rc_parser{
                         {
                             match self.parse_iteration(state, i.to_string(), &mut scope)
                             {
+                                Some(ParseState::ParseScript(someScript)) =>
+                                {
+                                    current_key = someScript;
+                                }
+
+                                Some(ParseState::ParseEntry(Entry)) =>
+                                {
+                                    start_buffer = true;
+                                }
+
+                                Some(ParseState::ParseScript(someScript)) =>
+                                {
+                                    if start_buffer == true
+                                    {
+                                        start_buffer = false;
+                                        current_path = someScript;
+                                        ret_hash.insert(current_key, current_path);
+                                    }
+                                    
+                                }
+
                                 Some(someState) => {state = someState}
                                 None => {panic!("Bad RC.")}
                             }
-                            
                         }
 
                         if debug
