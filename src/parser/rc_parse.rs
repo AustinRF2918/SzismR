@@ -37,6 +37,110 @@ pub mod rc_parser{
             }
         }
 
+        pub fn parse_iteration(&mut self, state: ParseState, token : String, scope: &mut i32) -> Option<ParseState>
+        {
+            //A little slow, refactor as borrowed regex later.
+            let p_pack = regex::Regex::new(r"(.*)\.parsePack").unwrap();
+            let p_ms_entry = regex::Regex::new(r"(.*)\.parseScripts").unwrap();
+            let p_s_entry = regex::Regex::new(r"(?P<script_caller>.*)\^entryPoint").unwrap();
+            let p_descope = regex::Regex::new(r"(.*)End").unwrap();
+            let s_entry = regex::Regex::new(r"(?P<script_entry>.*)").unwrap();
+            let s_dependancy = regex::Regex::new(r"(.*)").unwrap();
+
+
+            match state
+            {
+                ParseState::SOP =>
+                {
+                    if p_pack.is_match(token.as_str())
+                    {
+                        *scope += 1;
+                        Some(ParseState::ParsePack(token))
+                    }
+                    else
+                    {
+                        None
+                    }
+                },
+                ParseState::ParsePack(data) =>
+                {
+                    if p_ms_entry.is_match(token.as_str())
+                    {
+                        *scope += 1;
+                        Some(ParseState::ParseScripts(token))
+                    }
+                    else
+                    {
+                        None
+                    }
+                },
+                ParseState::ParseScripts(data) =>
+                {
+                    if p_pack.is_match(token.as_str())
+                    {
+                        *scope += 1;
+                        Some(ParseState::ParsePack(token))
+                    }
+                    else
+                    {
+                        None
+                    }
+                },
+                ParseState::ParseEntry(data) =>
+                {
+                    if p_pack.is_match(token.as_str())
+                    {
+                        *scope += 1;
+                        Some(ParseState::ParsePack(token))
+                    }
+                    else
+                    {
+                        None
+                    }
+                },
+                ParseState::ParseScript(data) =>
+                {
+                    if p_pack.is_match(token.as_str())
+                    {
+                        *scope += 1;
+                        Some(ParseState::ParsePack(token))
+                    }
+                    else
+                    {
+                        None
+                    }
+                },
+                ParseState::ParseEnd(data) =>
+                {
+                    if p_pack.is_match(token.as_str())
+                    {
+                        *scope += 1;
+                        Some(ParseState::ParsePack(token))
+                    }
+                    else
+                    {
+                        None
+                    }
+                },
+                ParseState::EOP(data) =>
+                {
+                    if p_pack.is_match(token.as_str())
+                    {
+                        *scope += 1;
+                        Some(ParseState::ParsePack(token))
+                    }
+                    else
+                    {
+                        None
+                    }
+                },
+                _ =>
+                {
+                    None
+                }
+            }
+        }
+
         pub fn parse(&self, root : &PathBuf, debug : bool) -> HashMap<String, String>
         {
             //We're gonna return a new path without destroying our old root.
@@ -52,124 +156,22 @@ pub mod rc_parser{
                         //Parse tokens by new line.
                         let tokens : Vec<&str> = string_portion.split('\n').collect();
 
-                        let p_pack = regex::Regex::new(r"(.*)\.parsePack").unwrap();
-                        let p_ms_entry = regex::Regex::new(r"(.*)\.parseScripts").unwrap();
-                        let p_s_entry = regex::Regex::new(r"(?P<script_caller>.*)\^entryPoint").unwrap();
-                        let p_descope = regex::Regex::new(r"(.*)End").unwrap();
-                        let s_entry = regex::Regex::new(r"(?P<script_entry>.*)").unwrap();
-                        let s_dependancy = regex::Regex::new(r"(.*)").unwrap();
-
-                        let mut scope = 0;
+                                                let mut scope = 0;
 
                         let mut current_key = String::new();
                         let mut current_path = String::new();
+                        let mut scope = 0;
 
                         let mut state: ParseState = ParseState::SOP;
-                        
+
                         for i in tokens
                         {
-                            match state
+                            match self.parse_iteration(state, i.to_string(), &mut scope)
                             {
-                                ParseState::SOP =>
-                                {
-                                    if p_pack.is_match(i)
-                                    {
-                                        scope += 1;
-                                        state = ParseState::ParsePack(i.to_string());
-                                    }
-                                    else
-                                    {
-                                        println!("Error parsing RC File");
-                                        ::std::process::exit(3);
-                                    }
-                                },
-                                ParseState::ParsePack(data) =>
-                                {
-                                    if p_pack.is_match(i)
-                                    {
-                                        scope += 1;
-                                        state = ParseState::ParsePack(i.to_string());
-                                    }
-                                    else
-                                    {
-                                        println!("Error parsing RC File");
-                                        ::std::process::exit(3);
-                                    }
-                                },
-                                ParseState::ParseScripts(data) =>
-                                {
-                                    if p_pack.is_match(i)
-                                    {
-                                        current_key = data;
-                                        scope += 1;
-                                        state = ParseState::ParsePack(i.to_string());
-                                    }
-                                    else
-                                    {
-                                        println!("Error parsing RC File");
-                                        ::std::process::exit(3);
-                                    }
-                                },
-                                ParseState::ParseEntry(data) =>
-                                {
-                                    if p_pack.is_match(i)
-                                    {
-                                        ret_hash.insert(data, current_key);
-                                        scope += 1;
-                                        state = ParseState::ParsePack(i.to_string());
-                                    }
-                                    else
-                                    {
-                                        println!("Error parsing RC File");
-                                        ::std::process::exit(3);
-                                    }
-                                },
-                                ParseState::ParseScript(data) =>
-                                {
-                                    if p_pack.is_match(i)
-                                    {
-                                        ret_hash.insert(data, current_key);
-                                        scope += 1;
-                                        state = ParseState::ParsePack(i.to_string());
-                                    }
-                                    else
-                                    {
-                                        println!("Error parsing RC File");
-                                        ::std::process::exit(3);
-                                    }
-                                },
-                                ParseState::ParseEnd(data) =>
-                                {
-                                    if p_pack.is_match(i)
-                                    {
-                                        ret_hash.insert(data, current_key);
-                                        scope += 1;
-                                        state = ParseState::ParsePack(i.to_string());
-                                    }
-                                    else
-                                    {
-                                        println!("Error parsing RC File");
-                                        ::std::process::exit(3);
-                                    }
-                                },
-                                ParseState::EOP(data) =>
-                                {
-                                    if p_pack.is_match(i)
-                                    {
-                                        ret_hash.insert(data, current_key);
-                                        scope += 1;
-                                        state = ParseState::ParsePack(i.to_string());
-                                    }
-                                    else
-                                    {
-                                        println!("Error parsing RC File");
-                                        ::std::process::exit(3);
-                                    }
-                                },
-                                _ =>
-                                {
-                                }
+                                Some(someState) => {state = someState}
+                                None => {panic!("Bad RC.")}
                             }
+                            
                         }
 
                         if debug
@@ -186,5 +188,7 @@ pub mod rc_parser{
             };
             ret_hash
         }
+
+        
     }
 }

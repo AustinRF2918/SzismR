@@ -1,8 +1,5 @@
 /*
- * This is a portion for parsing into a hashmap
- * our parsed rc and allowing the user to call
- * pass it back to our main caller for the user
- * to do stuff with.
+ * Allows us to parse our arguments into a noun verb adjetive structure.
 */
 
 
