@@ -54,13 +54,10 @@ pub mod rc_parser{
                 {
                     if p_pack.is_match(token.as_str())
                     {
-                        println!("Parse Packs.");
-                        *scope += 1;
                         Some(ParseState::ParsePack(token))
                     }
                     else
                     {
-                        println!("None SOP");
                         None
                     }
                 },
@@ -68,13 +65,10 @@ pub mod rc_parser{
                 {
                     if p_ms_entry.is_match(token.as_str())
                     {
-                        println!("Parse Scripts.");
-                        *scope += 1;
                         Some(ParseState::ParseScripts(token))
                     }
                     else
                     {
-                        println!("None PARSEPACK");
                         None
                     }
                 },
@@ -82,12 +76,10 @@ pub mod rc_parser{
                 {
                     if p_s_entry.is_match(token.as_str())
                     {
-                        println!("Parse Starting Scripts.");
                         Some(ParseState::ParseEntry(token))
                     }
                     else
                     {
-                        println!("None ParseScripts");
                         None
                     }
                 },
@@ -96,13 +88,10 @@ pub mod rc_parser{
                     
                     if s_entry.is_match(token.as_str())
                     {
-                        println!("Entry script found.");
-                        *scope += 1;
                         Some(ParseState::ParseScript(token))
                     }
                     else
                     {
-                        println!("None ParseEntry");
                         None
                     }
                 },
@@ -110,20 +99,14 @@ pub mod rc_parser{
                 {
                     if p_descope.is_match(token.as_str())
                     {
-                        println!("Parse end script found.");
-                        *scope -= 1;
                         Some(ParseState::ParseEnd(token))
                     }
                     else if s_entry.is_match(token.as_str())
                     {
-                        println!("Parsing single dependancy found.");
-                        *scope += 1;
                         Some(ParseState::ParseScript(token))
                     }
                     else if s_dependancy.is_match(token.as_str())
                     {
-                        println!("Parsing Script CALLEd");
-                        *scope += 1;
                         Some(ParseState::ParseScript(token))
                     }
                     else
@@ -137,16 +120,24 @@ pub mod rc_parser{
                     {
                         Some(ParseState::ParseScripts(token))
                     }
-                    else
+                    else if p_pack.is_match(token.as_str())
                     {
-                        None
+                        Some(ParseState::ParsePack(token))
                     }
+                    else if p_descope.is_match(token.as_str())
+                    {
+                        Some(ParseState::ParseEnd(token))
+                    }
+                    else 
+                    {
+                        Some(ParseState::EOP(token))
+                    }
+                        
                 },
                 &ParseState::EOP(ref data) =>
                 {
                     if p_pack.is_match(token.as_str())
                     {
-                        *scope += 1;
                         Some(ParseState::ParsePack(token))
                     }
                     else
@@ -201,9 +192,16 @@ pub mod rc_parser{
                                 {
                                     if start_buffer == true
                                     {
+                                        let p_ms_entry = regex::Regex::new(r"(.*)\.parseScripts").unwrap();
                                         start_buffer = false;
                                         current_path = someScript.clone();
-                                        ret_hash.insert(current_key.clone(), current_path.clone());
+                                        let mut key = current_key.clone().split_whitespace().next().unwrap().to_string();
+                                        for i in 0..13
+                                        {
+                                            key.pop();
+                                        }
+
+                                        ret_hash.insert(key , current_path.split_whitespace().next().unwrap().to_string());
                                         state = ParseState::ParseScript(someScript);
                                     }
                                     else
@@ -215,6 +213,11 @@ pub mod rc_parser{
                                 Some(ParseState::ParseEnd(someScript)) =>
                                 {
                                     state = ParseState::ParseEnd(someScript);
+                                }
+
+                                Some(ParseState::ParsePack(someScript)) =>
+                                {
+                                    state = ParseState::ParsePack(someScript);
                                 }
 
                                 Some(someState) => {state = someState}

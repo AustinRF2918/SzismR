@@ -140,6 +140,11 @@ fn show_loaded_scripts(debug : bool)
 
             let command_hash = make_rc_dict(&exe_path, rc_stack, debug);
 
+            for i in command_hash.keys()
+            {
+                println!("{}", i);
+            }
+
             //Parse the rc and, define our h_parse object as the dictionary of all the objects.
 
             if debug
