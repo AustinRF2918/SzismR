@@ -37,7 +37,7 @@ pub mod rc_parser{
             }
         }
 
-        pub fn parse_iteration(&mut self, state: ParseState, token : String, scope: &mut i32) -> Option<ParseState>
+        pub fn parse_iteration(&mut self, state: &ParseState, token : String, scope: &mut i32) -> Option<ParseState>
         {
             //A little slow, refactor as borrowed regex later.
             let p_pack = regex::Regex::new(r"(.*)\.parsePack").unwrap();
@@ -50,23 +50,91 @@ pub mod rc_parser{
 
             match state
             {
-                ParseState::SOP =>
+                &ParseState::SOP =>
                 {
                     if p_pack.is_match(token.as_str())
                     {
+                        println!("Parse Packs.");
                         *scope += 1;
                         Some(ParseState::ParsePack(token))
+                    }
+                    else
+                    {
+                        println!("None SOP");
+                        None
+                    }
+                },
+                &ParseState::ParsePack(ref data) =>
+                {
+                    if p_ms_entry.is_match(token.as_str())
+                    {
+                        println!("Parse Scripts.");
+                        *scope += 1;
+                        Some(ParseState::ParseScripts(token))
+                    }
+                    else
+                    {
+                        println!("None PARSEPACK");
+                        None
+                    }
+                },
+                &ParseState::ParseScripts(ref data) =>
+                {
+                    if p_s_entry.is_match(token.as_str())
+                    {
+                        println!("Parse Starting Scripts.");
+                        Some(ParseState::ParseEntry(token))
+                    }
+                    else
+                    {
+                        println!("None ParseScripts");
+                        None
+                    }
+                },
+                &ParseState::ParseEntry(ref data) =>
+                {
+                    
+                    if s_entry.is_match(token.as_str())
+                    {
+                        println!("Entry script found.");
+                        *scope += 1;
+                        Some(ParseState::ParseScript(token))
+                    }
+                    else
+                    {
+                        println!("None ParseEntry");
+                        None
+                    }
+                },
+                &ParseState::ParseScript(ref data) =>
+                {
+                    if p_descope.is_match(token.as_str())
+                    {
+                        println!("Parse end script found.");
+                        *scope -= 1;
+                        Some(ParseState::ParseEnd(token))
+                    }
+                    else if s_entry.is_match(token.as_str())
+                    {
+                        println!("Parsing single dependancy found.");
+                        *scope += 1;
+                        Some(ParseState::ParseScript(token))
+                    }
+                    else if s_dependancy.is_match(token.as_str())
+                    {
+                        println!("Parsing Script CALLEd");
+                        *scope += 1;
+                        Some(ParseState::ParseScript(token))
                     }
                     else
                     {
                         None
                     }
                 },
-                ParseState::ParsePack(data) =>
+                &ParseState::ParseEnd(ref data) =>
                 {
                     if p_ms_entry.is_match(token.as_str())
                     {
-                        *scope += 1;
                         Some(ParseState::ParseScripts(token))
                     }
                     else
@@ -74,7 +142,7 @@ pub mod rc_parser{
                         None
                     }
                 },
-                ParseState::ParseScripts(data) =>
+                &ParseState::EOP(ref data) =>
                 {
                     if p_pack.is_match(token.as_str())
                     {
@@ -86,62 +154,10 @@ pub mod rc_parser{
                         None
                     }
                 },
-                ParseState::ParseEntry(data) =>
-                {
-                    if p_pack.is_match(token.as_str())
-                    {
-                        *scope += 1;
-                        Some(ParseState::ParsePack(token))
-                    }
-                    else
-                    {
-                        None
-                    }
-                },
-                ParseState::ParseScript(data) =>
-                {
-                    if p_pack.is_match(token.as_str())
-                    {
-                        *scope += 1;
-                        Some(ParseState::ParsePack(token))
-                    }
-                    else
-                    {
-                        None
-                    }
-                },
-                ParseState::ParseEnd(data) =>
-                {
-                    if p_pack.is_match(token.as_str())
-                    {
-                        *scope += 1;
-                        Some(ParseState::ParsePack(token))
-                    }
-                    else
-                    {
-                        None
-                    }
-                },
-                ParseState::EOP(data) =>
-                {
-                    if p_pack.is_match(token.as_str())
-                    {
-                        *scope += 1;
-                        Some(ParseState::ParsePack(token))
-                    }
-                    else
-                    {
-                        None
-                    }
-                },
-                _ =>
-                {
-                    None
-                }
             }
         }
 
-        pub fn parse(&self, root : &PathBuf, debug : bool) -> HashMap<String, String>
+        pub fn parse(&mut self, root : &PathBuf, debug : bool) -> HashMap<String, String>
         {
             //We're gonna return a new path without destroying our old root.
             let mut string_portion = &mut String::new();
@@ -167,15 +183,17 @@ pub mod rc_parser{
 
                         for i in tokens
                         {
-                            match self.parse_iteration(state, i.to_string(), &mut scope)
+                            match self.parse_iteration(&state, i.to_string(), &mut scope)
                             {
-                                Some(ParseState::ParseScript(someScript)) =>
+                                Some(ParseState::ParseScripts(someScript)) =>
                                 {
+                                    state = ParseState::ParseScripts(someScript.clone());
                                     current_key = someScript;
                                 }
 
                                 Some(ParseState::ParseEntry(Entry)) =>
                                 {
+                                    state = ParseState::ParseEntry(Entry);
                                     start_buffer = true;
                                 }
 
@@ -184,10 +202,19 @@ pub mod rc_parser{
                                     if start_buffer == true
                                     {
                                         start_buffer = false;
-                                        current_path = someScript;
-                                        ret_hash.insert(current_key, current_path);
+                                        current_path = someScript.clone();
+                                        ret_hash.insert(current_key.clone(), current_path.clone());
+                                        state = ParseState::ParseScript(someScript);
                                     }
-                                    
+                                    else
+                                    {
+                                        state = ParseState::ParseScript(someScript);
+                                    }
+                                }
+
+                                Some(ParseState::ParseEnd(someScript)) =>
+                                {
+                                    state = ParseState::ParseEnd(someScript);
                                 }
 
                                 Some(someState) => {state = someState}
@@ -210,6 +237,6 @@ pub mod rc_parser{
             ret_hash
         }
 
-        
+
     }
 }

@@ -291,6 +291,6 @@ fn call_script(script_executable : &PathBuf, debug : bool)
 
 fn make_rc_dict(exe_path: &PathBuf, rc_stack: Vec<&str>, debug: bool) -> HashMap<String, String>
 {
-    let h_parse = parser::rc_parser::HashParser::new();
-    h_parse.parse_rc(&mutate_path(&exe_path, debug, rc_stack), debug)
+   let mut h_parse = parser::rc_parser::RCObject::new();
+   h_parse.parse(&mutate_path(&exe_path, debug, rc_stack), debug)
 }
