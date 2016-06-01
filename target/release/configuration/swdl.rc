@@ -1,0 +1,50 @@
+std.parsePack
+    htmlInit.parseScripts
+        htmlInit^entryPoint
+            ag-Boilerplate/autoGenerate.py
+    htmlInit.parseEnd
+    dbNavbar.parseScripts
+        dbNavbar^entryPoint
+            db-Navbar/distributeNavbar.py
+        db-Navbar/webAssets.config
+    dbNavbar.parseEnd
+    jsCherryOnTop.parseScripts
+        jsCherryOnTop^entryPoint
+            js-CherryOnTop/cherryOnTop.py
+        js-CherryOnTop/cotSnips.config
+        [!RECURSIVE] bbbSnippets
+    jsCherryOnTop.parseEnd
+    paSetPageAttributes.parseScripts
+        paSet^entryPoint
+            pa-SetPageAttributes/pa-Set.py
+    paSetPageAttributes.parseEnd
+    bsInit.parseScripts 
+        bsInit^entryPoint 
+            bs-AutoTemplateGenerator/autoTemplater.py
+    bsInit.parseEnd
+    saObjectDatabase.parseScripts 
+        saObjectDatabase^entryPoint
+            sa-ObjectDatabase/objectDatabase.py
+    saObjectDatabase.parseEnd
+    sassInit.parseScripts 
+        sassInit^entryPoint
+            fs-AutoTemplateGenerator/autoTemplater.py
+    sassInit.parseEnd
+    sassAdd.parseScripts 
+        sassAdd^entryPoint
+            sass-componentGenerator/autoTemplater.py
+    sassAdd.parseEnd
+    gulpInit.parseScripts 
+        gulpInit^entryPoint
+            js-GulpInit/initializeGulp.py
+    gulpInit.parseEnd
+std.parseEnd
+stdConfig.parsePack
+    agBoilerplateScripts.parseScripts 
+        agBoilerplateScripts^entryPoint
+        configFiles/bPath.config
+        configFiles/jPath.config
+        configFiles/jPath.config
+        configFiles/prototypeImages.config
+    agBoilerplateScripts.parseEnd
+stdConfig.parseEnd

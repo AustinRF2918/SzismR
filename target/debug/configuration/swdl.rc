@@ -6,13 +6,10 @@ std.parsePack
     dbNavbar.parseScripts
         dbNavbar^entryPoint
             db-Navbar/distributeNavbar.py
-        db-Navbar/webAssets.config
     dbNavbar.parseEnd
     jsCherryOnTop.parseScripts
         jsCherryOnTop^entryPoint
             js-CherryOnTop/cherryOnTop.py
-        js-CherryOnTop/cotSnips.config
-        [!RECURSIVE] bbbSnippets
     jsCherryOnTop.parseEnd
     paSetPageAttributes.parseScripts
         paSet^entryPoint
@@ -35,12 +32,3 @@ std.parsePack
             sass-componentGenerator/autoTemplater.py
     sassComponentTemplater.parseEnd
 std.parseEnd
-stdConfig.parsePack
-    agBoilerplateScripts.parseScripts 
-        agBoilerplateScripts^entryPoint
-        configFiles/bPath.config
-        configFiles/jPath.config
-        configFiles/jPath.config
-        configFiles/prototypeImages.config
-    agBoilerplateScripts.parseEnd
-stdConfig.parseEnd

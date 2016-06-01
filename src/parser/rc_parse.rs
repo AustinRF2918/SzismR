@@ -48,6 +48,7 @@ pub mod rc_parser{
             let s_dependancy = regex::Regex::new(r"(.*)").unwrap();
 
 
+            //Refactor by adding change in state here.
             match state
             {
                 &ParseState::SOP =>
