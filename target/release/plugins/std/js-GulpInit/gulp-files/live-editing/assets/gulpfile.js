@@ -3,10 +3,12 @@ var os = require('os');
 var sass = require('gulp-sass');
 var pug = require('gulp-pug');
 var gutil = require('gulp-util');
+var minify = require('gulp-minifier');
 
 var EXPRESS_PORT = 4001;
 var EXPRESS_ROOT = __dirname;
 var LIVERELOAD_PORT = 35729;
+
 
 var getNetworkInformation = function(){
     console.log("Starting express on local host: " + EXPRESS_PORT);
@@ -63,7 +65,7 @@ gulp.task('pug', function(){
 
 gulp.task('watch', function(){
     gulp.watch('./sass/**/*', ['sass']);
-    gulp.watch('./pug/**/*', ['pug']);
+    gulp.watch(['./pug/**/*', './pug/*', './pug/**/**/*'], ['pug']);
 });
 
 gulp.task('sass', function(){
@@ -72,11 +74,26 @@ gulp.task('sass', function(){
     .pipe(gulp.dest('css/app.css'))
 });
 
+gulp.task('produce', function(){
+    return gulp.src('ProductionFiles/**/*').pipe(
+        minify({
+            minify: true,
+            collapseWhitespace: true,
+            conservativeCollapse: true,
+            minifyJS: true,
+            minifyCSS: true,
+            getKeptComment: function(content, filePath){
+                var m = content.match(/\/\*![\s\S]*?\*\//img);
+                return m && m.join('\n') + '\n' || '';
+            }
+        })).pipe(gulp.dest('Final'));
+});
+
 gulp.task('default', function()
 {
     console.log("Current network information")
     console.log(getNetworkInformation());
     startExpress();
     startLiveReload();
-    gulp.watch(['*.html', 'css/*.css', 'js/**/*'], notifyLivereload);
+    gulp.watch(['ProductionFiles/*.html', 'ProductionFiles/css/**/*.css', 'ProductionFiles/js/**/*'], notifyLivereload);
 })
